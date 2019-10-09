@@ -5,7 +5,7 @@
 #define	INVALID_FORMAT	1
 #define	FILE_ERROR	2
 
-
+#include "img.h"
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -65,7 +65,6 @@ struct BMP {
 };
 typedef struct BMP bmp;
 
-
 size_t fpread(void *buf, size_t size, size_t offset, FILE *fp);
 
 void bmp_close(bmp *img);
@@ -73,5 +72,9 @@ void bmp_close(bmp *img);
 bmp * bmp_load(const char *path);
 
 unsigned int bmp_save(bmp *img, const char *path);
+
+imgObj* bmpToImgObj(bmp* img);
+
+bmp* imgObjToBmp(imgObj* img, bmp_file_h fileHeader, bmp_info_h infoHeader);
 
 #endif

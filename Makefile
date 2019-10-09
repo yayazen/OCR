@@ -1,15 +1,18 @@
 # Do not modify this makefile
 
 CC=gcc
-CFLAGS= -Wall -Wextra -std=c99 -O2
+CFLAGS= -Werror -Wall -Wextra -std=c99 -O2
 
-SRC = proc/proc.c proc/bmp.c
-OBJ = ${SRC:.c=.o}
+all: main
 
-main: ${OBJ}
+.PHONY: main clean
 
-.PHONY: clean
+main:
+	+$(MAKE) -C proc
+	+$(MAKE) -C nnet
 
 clean:
-	${RM} ${OBJ}
+	+$(MAKE) -C proc clean
+	+$(MAKE) -C nnet clean
+
 #EOF
