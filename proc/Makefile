@@ -5,7 +5,7 @@ LDFLAGS =
 LDLIBS= -lm
 
 SRC = proc.c bmp.c img.c seg.c
-TESTSRC = test.c
+TESTSRC = segTesting.c
 
 OBJ = ${SRC:.c=.o}
 TESTOBJ = ${TESTSRC:.c=.o}
@@ -18,11 +18,11 @@ all: proc
 
 proc: ${OBJ}
 
-#test: CPPFLAGS = -D PRESENTATION -D DEBUG
-test: ${TESTOBJ} ${OBJ} 
+segTesting: CPPFLAGS = -D PRESENTATION
+segTesting: ${TESTOBJ} ${OBJ} 
 
 clean:
-	${RM} ${OBJ} ${DEP} ${TESTOBJ} test
+	${RM} ${OBJ} ${DEP} ${TESTOBJ} segTesting
 
 -include ${DEP}
 

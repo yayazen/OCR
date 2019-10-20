@@ -55,8 +55,6 @@ void copyImgObj(imgObj* src, imgObj* dst, size_t height, size_t width);
 // note that the whole area must be inside src, if dimensions are out of bounds, 
 // the function will return with nothing changed.
 
-
-//TODO
 charSet* createCharSetFromLine(imgObj* img, size_t setHeight, size_t setWidth);
 // this function reads and imgObj and creates a charSet linked list out of the characters found on that line.
 // "setHeigh" is the height of the image of the elements of charSet
