@@ -26,7 +26,7 @@ void freeImgObj(imgObj* img){
 
 uint8_t* getPixel(imgObj* img, size_t height, size_t width){
 	if ((height >= img->h) || (width >= img->w)){
-		fprintf(stderr, "getPixel: out of bounds coordinates\n");
+		fprintf(stderr, "getPixel: out of bounds coordinates (%lu vs %lu:%lu vs %lu)\n", img->h, height, img->w, width);
 		return NULL;
 	}
 	return img->pixels + ((height*img->w + width) * 3);

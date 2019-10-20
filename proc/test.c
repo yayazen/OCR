@@ -13,29 +13,34 @@ int main(int argc, char** argv){
 	}
 	bmp* bmpImg = bmp_load(argv[1]);
 	imgObj* img = bmpToImgObj(bmpImg);
-	printf("%lu height, %lu width\n", img->h, img->w);
 	//grayScale(img);
 	//binarization(img);
+
 	size_t n = 0;
-	splitImgIntoLines(img, &n);
+	imgObj** lines = splitImgIntoLines(img, &n);
 	printf("%lu lines\n", n);
+	charSet** sets = calloc(n, sizeof(charSet*));
 	
-	/*for (size_t h = 0; h < img->h; h++){
-		uint8_t* pix = getPixel(img, h, 0);
-		pix[1] = 0;
-		pix[2] = 0;
+	for (size_t i = 0; i < n; i++){
+		sets[i] = createCharSetFromLine(lines[i], 32, 32);
 	}
-	
-	for (size_t w = 0; w < img->w; w++){
-		uint8_t* pix = getPixel(img, 10, w);
-		pix[0] = 0;
-		pix[2] = 0;
-	}
-	uint8_t* pix = getPixel(img, 12, 1);
-	pix[0] = 0;
-	pix[1] = 0;*/
-	bmp* newBmpImg = imgObjToBmp(img, bmpImg->file_h, bmpImg->info_h);
-	bmp_save(newBmpImg, "out.bmp");
-	//bmp_save(bmpImg, "out.bmp");
+
+	bmp* lineBmp = imgObjToBmp(img, bmpImg->file_h, bmpImg->info_h);
+	bmp_save(lineBmp, "line.bmp");
+
+
+	imgObj* tempImg = lines[5];
+	bmp* charBmp = imgObjToBmp(tempImg, bmpImg->file_h, bmpImg->info_h);
+	charBmp->info_h.width = tempImg->w;
+	charBmp->info_h.height = tempImg->h;
+	charBmp->file_h.size = tempImg->w * tempImg->h * 3;
+	bmp_save(charBmp, "char.bmp");
+
+	tempImg = sets[5]->head->img;
+	bmp* charParsedBmp = imgObjToBmp(tempImg, bmpImg->file_h, bmpImg->info_h);
+        charParsedBmp->info_h.width = tempImg->w;
+        charParsedBmp->info_h.height = tempImg->h;
+        charParsedBmp->file_h.size = tempImg->w * tempImg->h * 3;
+        bmp_save(charParsedBmp, "charParsed.bmp");
 	return 1;
 }

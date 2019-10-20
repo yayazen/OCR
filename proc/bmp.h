@@ -50,7 +50,7 @@ typedef struct bmpInfoHeader bmp_info_h;
 #pragma pack(push, 1)
 struct Pixel
 {	
-	uint8_t		r, g, b;
+	uint8_t		b, g, r;
 };
 typedef struct Pixel pixel;
 #pragma pack(pop)

@@ -73,7 +73,7 @@ bmp * bmp_load(const char *path) {
 
 	img.h = img.info_h.height;
 	img.w = img.info_h.width;
-	uint8_t padding = 4 - (img.w * 3) % 4;
+	uint8_t padding = (4 - (img.w * 3) % 4) % 4;
 	img.pixels = malloc(img.h * sizeof(pixel *));	
 	for (int r = 0; r < img.h; r++) {
 		img.pixels[r] = malloc(img.w * sizeof(pixel));
@@ -96,7 +96,7 @@ unsigned int bmp_save(bmp *img, const char *path) {
 	fwrite(&img->file_h, sizeof(bmp_file_h), 1, fp);
 	fwrite(&img->info_h, sizeof(bmp_info_h), 1, fp);
 	fseek(fp, img->file_h.offset, SEEK_SET);
-	uint8_t padding = 4 - (img->w * 3) % 4;
+	uint8_t padding = (4 - (img->w * 3) % 4) % 4;
 	for (int r = 0; r < img->h; r++){
 		fwrite(img->pixels[r], sizeof(pixel), img->w, fp);
 		fseek(fp, padding, SEEK_CUR);

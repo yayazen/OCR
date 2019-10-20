@@ -6,7 +6,7 @@ charSet* newCharSet(size_t height, size_t width){
 		fprintf(stderr, "newCharSet: could not allocate memory\n");
 		return NULL;
 	}
-
+	set->head = NULL;
 	set->h = height;
 	set->w = width;
 	return set;
@@ -24,10 +24,26 @@ charSetObj* newCharSetObj(charSet* set){
 		return NULL;
 	}	
 
-	elm->img = newImgObj(set->h, set->w);
+	elm->img = NULL;
 	elm->next = NULL;
 	return elm;
 }
+
+void freeCharSet(charSet* set){
+	freeCharSetObj(set->head);
+	free(set);
+	return;
+}
+
+void freeCharSetObj(charSetObj* setObj){
+	if (setObj == NULL)
+		return;
+	freeCharSetObj(setObj->next);
+	freeImgObj(setObj->img);
+	free(setObj);
+	return;
+}
+
 
 charSetObj* pushNewCharSetObj(charSet* set){
 	if (set == NULL){
@@ -40,6 +56,7 @@ charSetObj* pushNewCharSetObj(charSet* set){
 		set->head = newCharSetObj(set);
 		return set->head;
 	}
+
 	while (elm->next != NULL){
 		elm = elm->next;
 	}
@@ -69,7 +86,6 @@ imgObj** splitImgIntoLines(imgObj* img, size_t* n){
 		}
 	}
 #ifdef PRESENTATION
-	printf("Writing img...\n");
 	for (size_t h = 0; h < img->h; h++){
 		if (!linesType[h]){
 			for (size_t w = 0; w < img->w; w++){
@@ -137,6 +153,8 @@ imgObj** splitImgIntoLines(imgObj* img, size_t* n){
 	return lines;
 }
 
+
+//TODO move into proc.c or img.c
 void copyImgObj(imgObj* src, imgObj* dst, size_t height, size_t width){
 	if (src == NULL || dst == NULL){
 		fprintf(stderr, "copyImgObj: NULL image parameters\n");
@@ -154,23 +172,111 @@ void copyImgObj(imgObj* src, imgObj* dst, size_t height, size_t width){
 }
 
 
-// WIP unimplemented for now
-charSet* createCharSetFromLine(imgObj* img, size_t height, size_t startWidth, size_t endWidth, size_t setHeight, size_t setWidth){
+charSet* createCharSetFromLine(imgObj* img, size_t setHeight, size_t setWidth){
 	if (img == NULL){
 		fprintf(stderr, "createCharSetFromLine: img is NULL, could not create charSet\n");
 		return NULL;
 	}
-	if (startWidth > endWidth){
-		fprintf(stderr, "createCharSetFromLine: startWidth should not be > to endWidth\n");
-		return NULL;
-	}
-	if (img->h < height || img->w < startWidth || img->w < endWidth){
-		fprintf(stderr, "createCharSetFromLine: out of bound coordinates\n");
-		return NULL;
-	}
 	if (setHeight == 0 || setWidth == 0){
 		fprintf(stderr, "createCharSetFromLine: incorrect set dimensions\n");
+		return NULL;
 	}
-	fprintf(stderr, "createCharSetFromLine: Unimplemented Function\n");
-	return NULL;
+	
+	// booleans
+	int* stripType = calloc(img->w, sizeof(int));
+	if (stripType == NULL){
+		fprintf(stderr, "createCharSetFromLine: could not allocate memory\n");
+		return NULL;
+	}
+
+	for (size_t w = 0; w < img->w; w++){
+		for (size_t h = 0; h < img->h; h++){
+			uint8_t* pix = getPixel(img, h, w);
+			if (pix[0] == 0){
+				stripType[w] = 1;
+				break;
+			}
+		}
+	}
+
+#ifdef PRESENTATION
+	
+	for (size_t w = 0; w < img->w; w++){
+		if (stripType[w] == 0){
+			for (size_t h = 0; h < img->h; h++){
+				uint8_t* pix = getPixel(img, h, w);
+				pix[0] = 255;
+				pix[1] = 0;
+				pix[2] = 0;
+			}
+		}
+	}
+
+#endif	
+	size_t count = 0;
+        int prevStrip = 0;
+        for (size_t w = 0; w < img->w; w++){
+                if (prevStrip != stripType[w]){
+                        if (prevStrip){
+                                count++;
+                        }
+                } 
+                prevStrip = stripType[w];
+        }
+	
+	charSet* set = newCharSet(setHeight, setWidth);
+	if (set == NULL){
+		fprintf(stderr, "createCharSetFromLine: could not create charSet\n");
+		free(stripType);
+		return NULL;
+	}
+
+
+	prevStrip = 0;
+	size_t stripWidth = 0;
+	for (size_t w = 0; w < img->w; w++){
+
+		if (prevStrip != stripType[w]){
+			
+
+			if (prevStrip == 0){
+				stripWidth = 0;
+			} else {
+				imgObj* charImg = newImgObj(img->h, stripWidth);
+				if (charImg == NULL){
+					fprintf(stderr, "createCharSetFromLine: could not allocate img\n");
+					freeCharSet(set);
+					free(stripType);
+					return NULL;
+				}
+				copyImgObj(img, charImg, 0, w - stripWidth);
+				imgObj* cleanedCharImg = fitImage(charImg, set->h, set->w);
+				freeImgObj(charImg);
+				if (cleanedCharImg == NULL){
+					fprintf(stderr, "createCharSetFromLine: could not resize img\n");
+					freeCharSet(set);
+					free(stripType);
+					return NULL;
+				}
+				charSetObj* elm = pushNewCharSetObj(set);
+				if (elm == NULL){
+					fprintf(stderr, "createCharSetFromLine: could not create charSetObj\n");
+                                        freeCharSet(set);
+                                        free(stripType);
+					freeImgObj(cleanedCharImg);
+                                        return NULL;
+				}
+				elm->img = cleanedCharImg;
+			}
+		}
+		stripWidth++;
+		prevStrip = stripType[w];
+	}
+        
+                
+	free(stripType);
+	return set;
 }
+
+
+

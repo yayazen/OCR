@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS= -Werror -Wall -Wextra -std=c99 -O2
+CFLAGS= -Wall -Wextra -std=c99 -O2
 
 LDFLAGS =
 LDLIBS= -lm
