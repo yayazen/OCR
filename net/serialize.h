@@ -11,4 +11,5 @@
 
 unsigned int serialize_net(NET *net, const char *path);
 
+NET * load_net(const char *path);
 #endif

@@ -12,7 +12,7 @@ void feed_cycle(NET *net);
 void back(layer *from, layer *to);
 void back_cycle(NET *net);
 
-void compute_errors(NET *net, float *target);
+void mse_compute(NET *net, float *target);
 
 void ajustWeights(NET *net);
 #endif

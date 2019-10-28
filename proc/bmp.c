@@ -55,7 +55,6 @@ unsigned int bmp_save(bmp *img, const char *path) {
 	fwrite(&img->file_h, sizeof(bmp_file_h), 1, fp);
 	fwrite(&img->info_h, sizeof(bmp_info_h), 1, fp);
 
-	printf("Cool\n");
 	for (int r = 0; r < img->h; r++)
 		fwrite(img->pixels[r], sizeof(pixel), img->w, fp);
 

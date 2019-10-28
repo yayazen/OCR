@@ -59,7 +59,7 @@ void back_cycle(NET *net) {
 
 
 
-void compute_errors(NET *net, float *target) {
+void mse_compute(NET *net, float *target) {
 	float e = net->error = 0.0f;
 	for (int u = 0; u < net->out.units; u++) {
 		e = target[u] - net->out.outputs[u];
