@@ -3,6 +3,9 @@
 
 #define BI 1
 
+#define HI 0.9
+#define LO 0.1
+
 struct LAYER {
     int		units;
 
@@ -25,6 +28,9 @@ typedef struct {
 
 
 float randomf(float a, float b);
+
+int randi(int a, int b);
+
 
 NET * init_network(int nlayers, int *scale);    
 

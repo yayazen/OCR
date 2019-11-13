@@ -28,6 +28,9 @@ void feed(layer *from, layer *to) {
 }
 
 void feed_cycle(NET *net) {
+	/*
+	from in to out (exclude)
+	*/
 	for (int l = 0; l < net->nlayers - 1; l++) {
 		feed(&net->layers[l], &net->layers[l+1]);
 	}
@@ -37,17 +40,20 @@ void feed_cycle(NET *net) {
 
 
 void back(layer *from, layer *to) {
-	float error;
+	float err;
 	for (int u = 0; u < to->units; u++) {
-		error = 0;	
+		err = 0;	
 		for (int v = 0; v < from->units; v++) {
-			error += from->weights[v][u] * from->errors[v];
+			err += from->weights[v][u] * from->errors[v];
 		}
-		to->errors[u] = dsig(to->outputs[u]) * error;
+		to->errors[u] = dsig(to->outputs[u]) * err;
 	}
 }
 
 void back_cycle(NET *net) {
+	/*
+	from out to input layer (exclude)
+	*/
 	for (int l = net->nlayers - 1; l > 1; l--) {
 		back(&net->layers[l], &net->layers[l-1]);
 	}
@@ -60,9 +66,11 @@ void back_cycle(NET *net) {
 
 
 void mse_compute(NET *net, float *target) {
-	float e = net->error = 0.0f;
+	float e;
+	net->error = 0.0f;
 	for (int u = 0; u < net->out.units; u++) {
 		e = target[u] - net->out.outputs[u];
+		
 		net->out.errors[u] = dsig(net->out.outputs[u]) * e;
 		net->error += sqr(e) * 0.5f;
 	}
@@ -70,7 +78,7 @@ void mse_compute(NET *net, float *target) {
 
 
 
-void ajustWeights(NET *net) {
+void adjust(NET *net) {
 	float delta, value;
 	for (int l = 1; l < net->nlayers; l++) {
 		

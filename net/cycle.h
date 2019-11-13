@@ -14,5 +14,5 @@ void back_cycle(NET *net);
 
 void mse_compute(NET *net, float *target);
 
-void ajustWeights(NET *net);
+void adjust(NET *net);
 #endif

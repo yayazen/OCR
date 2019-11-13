@@ -1,16 +1,15 @@
-# OCR S3 EPITA
+# OCR S3 Epita
 
-## 1st defense : Make targets and usage
+## MNIST collection (Eval and Gui)
 
-### make XOR\_simulation or RD\_simulation
-	<p> usage : ./program [epoch] (file.nd) <p>
+### Requirements
+	gtk+-3.0
+	gmodule-2.0
+	tar cvzf data/mnist.tar.gz
 
-	stdout -> Evaluation for each simulation
-	files  -> save.nd	(Network data)
-		
+### Run
+	(build) make main
+	./main - no args
 
-### make segTesting
-	<p> usage : ./program [file.bmp] <p>
-	stdout -> Number of lines parsed
-	files   -> char.bmp ; charParsed.bmp; line.bmp
-
+### Useful files
+	~/save.nd - Network Data

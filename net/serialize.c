@@ -21,14 +21,13 @@ unsigned int serialize_net(NET *net, const char *path) {
 		fwrite(&net->layers[l].units, sizeof(int), 1, fp);
 	}
 
-
 	for (int l = 1; l < net->nlayers; l++) {		
 		for (int u = 0; u < net->layers[l].units; u++) {
 			for (int v = 0; v <= net->layers[l-1].units; v++) {
 				fwrite(&net->layers[l].weights[u][v], sizeof(float), 1, fp);}
 		}
 	}
-
+	
 	fclose(fp);	
 	
 	return NO_ERROR;

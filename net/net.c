@@ -7,6 +7,10 @@ float randomf(float a, float b) {
 	return ((float) rand() / RAND_MAX) * (b - a) + a;
 }
 
+int randi(int a, int b) {
+	return rand() % (b - a + 1) + a;
+}
+
 
 
 NET * init_network(int nlayers, int *scale) {
@@ -41,7 +45,7 @@ NET * init_network(int nlayers, int *scale) {
 	net.out = net.layers[nlayers - 1];
 
 	net.eta = 0.25;
-	net.alpha = 0.9;
+	net.alpha = 0.5;
 
 	return &net;
 }
