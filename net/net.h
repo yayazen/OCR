@@ -13,30 +13,32 @@ struct LAYER {
     float   *errors;
     float   **weights;
 	float 	**delta;
+
+	float	(*act)(float);
+	float	(*dact)(float);
 };
 typedef struct LAYER layer;
 
 typedef struct {
     int		nlayers;
     
-    layer	*layers;
-    layer	in;
-    layer   out;
+    layer	**layers;
+    layer	*in;
+    layer   *out;
 
     float   eta, alpha, error;
 } NET ;
 
 
 float randomf(float a, float b);
-
-int randi(int a, int b);
+int randint(int a, int b);
 
 
 NET * init_network(int nlayers, int *scale);    
+void free_network(NET *net);    
+
 
 void init_inputs(NET *net, float *inputs);
 
 void rand_weights(NET *net);
-
-void free_network(NET *net);    
 #endif

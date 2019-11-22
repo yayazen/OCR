@@ -5,13 +5,13 @@
 
 #include "net.h"
 
+void init_act(NET *net);
 
-void feed(layer *from, layer *to);
 void feed_cycle(NET *net);
 
-void back(layer *from, layer *to);
 void back_cycle(NET *net);
 
+void cross_entropy(NET *net, float *target);
 void mse_compute(NET *net, float *target);
 
 void adjust(NET *net);

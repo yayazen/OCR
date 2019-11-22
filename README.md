@@ -1,15 +1,15 @@
 # OCR S3 Epita
 
-## MNIST collection (Eval and Gui)
+## EMNIST collection (Eval and Gui)
 
 ### Requirements
 	gtk+-3.0
 	gmodule-2.0
-	tar cvzf data/mnist.tar.gz
+	Download and choose one of Emnist dataset, preferably balanced or digit
 
 ### Run
 	(build) make main
-	./main - no args
+	./main (2>/dev/null) - no args
 
 ### Useful files
 	~/save.nd - Network Data

@@ -1,6 +1,6 @@
 CC=gcc
 
-CFLAGS   = -fsanitize=address -Wall -Wextra -std=c99 -O2 -lm $(INC) $(SRC)
+CFLAGS  = -fsanitize=address -Wall -Wextra -std=c99 -O2 -lm $(INC) $(SRC)
 
 CFLAGS	+= -rdynamic
 CFLAGS  += `pkg-config gtk+-3.0 --cflags --libs`

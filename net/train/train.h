@@ -1,26 +1,50 @@
 #ifndef TRAIN_H
 #define TRAIN_H
 
-#define bool unsigned int
-#define true 1
-#define false 0
-
 #include "net.h"
+#include "mnist.h"
 #include <stdlib.h>
 
-#define A 10000
-#define B 784
 
 
-float train_data[A][B];
-float test_data[A][B];
+#define N 47
 
-void simulate(NET *net, float *inputs, float *target, bool train);
-int EvalRand(NET *net, float data[][784], bool test, bool train);
-size_t net_answer(NET *net);
 
-int load_gui(char *path);
-int train_gui(float epsilon, bool TestOnly);
+#define	bool unsigned int
+#define true 	1
+#define false 	0
+
+
+#define train_image_path  "./data/train-images-idx3-ubyte"
+#define train_label_path  "./data/train-labels-idx1-ubyte"
+#define test_image_path   "./data/test-images-idx3-ubyte"
+#define test_label_path   "./data/test-labels-idx1-ubyte"
+
+
+#define EPOCHS 		10000
+#define GOAL		0.001
+
+#define LR			0.15
+#define LR_INC		1.2
+#define	LR_DEC		0.7
+
+#define	PERF_INC	1.2
+#define	MIN_GRAD	0.00001
+
+#define SHOW		25
+#define	CMDLINE		false
+#define GUI			true
+	
+
+
+int load_gui(char *path, bool trsp);
+
+
+int train_gui(bool TestOnly);
+
 void save_training(void);
+
+
+
 void print_gui(const char *fmt, ...);
 #endif

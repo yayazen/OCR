@@ -10,6 +10,8 @@ typedef struct
 
 GtkWidget 		*window;
 
+GtkWidget		*drawer;
+
 GtkWidget		*FileSelect;
 
 GtkWidget		*view;
