@@ -64,7 +64,7 @@ charSetObj* pushNewCharSetObj(charSet* set){
 	return elm->next;
 }
 
-imgObj** splitImgIntoLines(imgObj* img, size_t* n){
+imgObj** splitImgIntoLines(imgObj* img, size_t* n, uint8_t threshold){
 	if (img == NULL){
 		fprintf(stderr, "splitImgIntoLines: img is NULL, could not split image\n");
 		return NULL;
@@ -79,23 +79,12 @@ imgObj** splitImgIntoLines(imgObj* img, size_t* n){
 	
 	for (size_t h = 0; h < img->h; h++){
 		for (size_t w = 0; w < img->w; w++){
-			if (getPixel(img, h, w)[0] == 0){
+			if (getPixel(img, h, w)[0] < threshold){
 				linesType[h] = 1;
 				break;
 			}
 		}
 	}
-#ifdef PRESENTATION
-	for (size_t h = 0; h < img->h; h++){
-		if (!linesType[h]){
-			for (size_t w = 0; w < img->w; w++){
-				getPixel(img, h, w)[1] = 0;
-				getPixel(img, h, w)[2] = 0;
-			}
-		}
-	}
-
-#endif
 	
 	size_t count = 0;
 	int prevLine = 0;
@@ -107,12 +96,7 @@ imgObj** splitImgIntoLines(imgObj* img, size_t* n){
 		}
 		prevLine = linesType[h];
 	}
-#ifdef DEBUG
-
-	for (size_t h = 0; h < img->h; h++){
-		printf("line %lu type : %i\n", h, linesType[h]);
-	}
-#endif
+	
 	imgObj** lines = calloc(count, sizeof(imgObj*));
 	if (lines == NULL){
 		fprintf(stderr, "splitImgIntoLines: could not allocate memory\n");
@@ -172,7 +156,7 @@ void copyImgObj(imgObj* src, imgObj* dst, size_t height, size_t width){
 }
 
 
-charSet* createCharSetFromLine(imgObj* img, size_t setHeight, size_t setWidth){
+charSet* createCharSetFromLine(imgObj* img, size_t setHeight, size_t setWidth, uint8_t threshold){
 	if (img == NULL){
 		fprintf(stderr, "createCharSetFromLine: img is NULL, could not create charSet\n");
 		return NULL;
@@ -192,27 +176,13 @@ charSet* createCharSetFromLine(imgObj* img, size_t setHeight, size_t setWidth){
 	for (size_t w = 0; w < img->w; w++){
 		for (size_t h = 0; h < img->h; h++){
 			uint8_t* pix = getPixel(img, h, w);
-			if (pix[0] == 0){
+			if (pix[0] <= threshold){
 				stripType[w] = 1;
 				break;
 			}
 		}
 	}
 
-#ifdef PRESENTATION
-	
-	for (size_t w = 0; w < img->w; w++){
-		if (stripType[w] == 0){
-			for (size_t h = 0; h < img->h; h++){
-				uint8_t* pix = getPixel(img, h, w);
-				pix[0] = 255;
-				pix[1] = 0;
-				pix[2] = 0;
-			}
-		}
-	}
-
-#endif	
 	size_t count = 0;
         int prevStrip = 0;
         for (size_t w = 0; w < img->w; w++){
@@ -242,6 +212,9 @@ charSet* createCharSetFromLine(imgObj* img, size_t setHeight, size_t setWidth){
 			if (prevStrip == 0){
 				stripWidth = 0;
 			} else {
+
+				//all of that definitly needs some optimization, will come in due time			
+
 				imgObj* charImg = newImgObj(img->h, stripWidth);
 				if (charImg == NULL){
 					fprintf(stderr, "createCharSetFromLine: could not allocate img\n");
@@ -250,23 +223,33 @@ charSet* createCharSetFromLine(imgObj* img, size_t setHeight, size_t setWidth){
 					return NULL;
 				}
 				copyImgObj(img, charImg, 0, w - stripWidth);
-				imgObj* cleanedCharImg = fitImage(charImg, set->h, set->w);
+
+				size_t n = 0;
+				imgObj** splitChars = split_touching_characters(charImg, &n, threshold);
 				freeImgObj(charImg);
-				if (cleanedCharImg == NULL){
-					fprintf(stderr, "createCharSetFromLine: could not resize img\n");
-					freeCharSet(set);
-					free(stripType);
-					return NULL;
+
+				for (size_t i = 0; i < n; i++){
+
+					imgObj* cleanedCharImg = fitImage(splitChars[i], set->h, set->w);
+                                	freeImgObj(splitChars[i]);
+                                	if (cleanedCharImg == NULL){
+                                	        fprintf(stderr, "createCharSetFromLine: could not resize img\n");
+                                	        freeCharSet(set);
+                                	        free(stripType);
+                                	        return NULL;
+                                	}
+                                	charSetObj* elm = pushNewCharSetObj(set);
+                                	if (elm == NULL){
+                                        	fprintf(stderr, "createCharSetFromLine: could not create charSetObj\n");
+                                        	freeCharSet(set);
+                                	        free(stripType);
+                        	                freeImgObj(cleanedCharImg);
+                	                        return NULL;
+        	                        }
+	                                elm->img = cleanedCharImg;
+
 				}
-				charSetObj* elm = pushNewCharSetObj(set);
-				if (elm == NULL){
-					fprintf(stderr, "createCharSetFromLine: could not create charSetObj\n");
-                                        freeCharSet(set);
-                                        free(stripType);
-					freeImgObj(cleanedCharImg);
-                                        return NULL;
-				}
-				elm->img = cleanedCharImg;
+				
 			}
 		}
 		stripWidth++;
@@ -278,5 +261,190 @@ charSet* createCharSetFromLine(imgObj* img, size_t setHeight, size_t setWidth){
 	return set;
 }
 
+
+void drop_fall(imgObj* img, uint8_t threshold){
+	// initialize dropped pixels
+	for (size_t w = 0; w < img->w; w++){
+		if (getPixel(img, img->h-1, w)[0] > threshold){
+			getPixel(img, img->h-1, w)[0] = 127;
+		}
+	}
+	for (size_t h = img->h - 1; h > 0; h--){
+		for (size_t w = 0; w < img->w; w++){
+			uint8_t* pix = getPixel(img, h, w);
+			if (pix[0] != 127){
+				continue;
+			}
+	
+			uint8_t* pixTested = getPixel(img, h-1, w);
+			if (pixTested[0] == 127){
+				continue;
+			}
+			if (pixTested[0] > threshold){
+				getPixel(img, h-1, w)[0] = 127;
+				continue;
+			}
+
+			int endRight = (w >= img->w -1);
+			if (!endRight){
+				pixTested = getPixel(img, h-1, w+1);
+				if (pixTested[0] == 127){
+					continue;
+				}
+				if (pixTested[0] > threshold){
+					pixTested[0] = 127;
+					continue;
+				}
+			}
+			
+			int endLeft = (w == 0);
+			if (!endLeft){
+				pixTested = getPixel(img, h-1, w-1);
+				if (pixTested[0] == 127){
+					continue;
+				}	
+				if (pixTested[0] > threshold){
+					pixTested[0] = 127;
+					continue;
+				}
+			}
+
+			if (!endRight){
+				pixTested = getPixel(img, h, w+1);
+				if (pixTested[0] == 127){
+					continue;
+				}
+				if (pixTested[0] > threshold){
+					pixTested[0] = 127;
+					continue;
+				}
+			}
+			
+			if (!endLeft){
+				pixTested = getPixel(img, h, w-1);
+				if (pixTested[0] == 127){
+					continue;
+				}
+				if (pixTested[0] > threshold){
+					pixTested[0] = 127;
+					w -= 2;
+					continue;
+				}
+			}
+			
+			//getPixel(img, h-1, w)[0] = 127;
+		}
+	}
+}
+
+imgObj** split_touching_characters(imgObj* img, size_t *n, uint8_t threshold){
+	drop_fall(img, threshold);
+	*n = 1;
+	int betweenChars = 0;
+	for (size_t w = 0; w < img->w; w++){
+		if (getPixel(img, 0, w)[0] == 127){
+			if (!betweenChars){
+				betweenChars = 1;
+				*n += 1;
+			}
+		} else {
+			if (betweenChars){
+				betweenChars = 0;
+			}
+		}
+	}
+	imgObj** chars = calloc(*n, sizeof(imgObj*));
+	betweenChars = 1;
+	size_t i = 0;
+        for (size_t w = 0; w < img->w; w++){
+                if (getPixel(img, 0, w)[0] == 127){
+                        if (!betweenChars){
+                                betweenChars = 1;
+                        }
+                } else {
+                        if (betweenChars){
+                                betweenChars = 0;
+				size_t minHeight = 0, maxHeight = 0, minWidth = w, maxWidth = w;
+				__finding_character(img, 0, w, &minHeight, &maxHeight, &minWidth, &maxWidth);
+				chars[i] = copying_characters(img, minHeight, maxHeight, minWidth, maxWidth);
+				i++;
+                        }
+                }
+        }
+	return chars;
+}
+
+//recursive function; could be otpimized by using a stack
+void __finding_character(imgObj* img, size_t h, size_t w, 
+	size_t *minHeight, size_t *maxHeight, size_t *minWidth, size_t *maxWidth){
+	
+	if (h >= img->h || w >= img->w)
+		return;
+	uint8_t *pix = getPixel(img, h, w);
+	if (pix[0] == 127 || pix[0] == 128)
+		return;
+	pix[0] = 128;
+	if (h > *maxHeight){
+		*maxHeight = h;
+	} else if (h < *minHeight){
+		*minHeight = h;
+	}
+	if (w > *maxWidth){
+		*maxWidth = w;
+	} else if (w < *minWidth){
+		*minWidth = w;
+	}
+	
+	__finding_character(img, h+1, w, minHeight, maxHeight, minWidth, maxWidth);
+	__finding_character(img, h-1, w, minHeight, maxHeight, minWidth, maxWidth);
+	__finding_character(img, h, w+1, minHeight, maxHeight, minWidth, maxWidth);
+	__finding_character(img, h, w-1, minHeight, maxHeight, minWidth, maxWidth);
+	return;
+}
+
+imgObj* copying_characters(imgObj* src, size_t minHeight, size_t maxHeight, 
+	size_t minWidth, size_t maxWidth){
+	
+
+	imgObj* dst = newImgObj(maxHeight - minHeight + 1, maxWidth - minWidth + 1);
+
+	for (size_t h = minHeight; h <= maxHeight; h++){
+		for (size_t w = minWidth; w <= maxWidth; w++){
+			uint8_t* pix = getPixel(src, h, w);
+			uint8_t* newPix = getPixel(dst, h - minHeight, w - minWidth);
+			
+			if (pix == NULL || newPix == NULL){
+				fprintf(stderr, "copying_characters: wrong dimensions\n");
+				return NULL;
+			}
+		
+			if (pix[0] == 128){
+				pix[0] = 127;
+				newPix[0] = pix[1];
+				newPix[1] = pix[1];
+				newPix[2] = pix[1];
+			} else {
+				newPix[0] = 255;
+				newPix[1] = 255;
+				newPix[2] = 255;
+			}
+
+		}
+	}
+	return dst;
+}
+
+
+charSet** segmentation(imgObj* img, size_t h, size_t w, uint8_t threshold, size_t *nLines){
+	*nLines = 0;
+	imgObj** lines = splitImgIntoLines(img, nLines, threshold);
+	charSet** sets = calloc(*nLines, sizeof(charSet*));
+	
+	for (size_t i = 0; i < *nLines; i++){
+		sets[i] = createCharSetFromLine(lines[i], h, w, threshold);
+	}
+
+	return sets;
+}
 
 
