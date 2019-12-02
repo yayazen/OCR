@@ -1,46 +1,45 @@
-#include "bmp.h"
-#include "img.h"
 #include "seg.h"
 #include "proc.h"
 #include <stdlib.h>
 #include <stdio.h>
-
+#include <gdk/gdk.h>
 
 int main(int argc, char** argv){
 	if (argc < 2){
 		fprintf(stderr, "main: invalid number of argument\n");
-		return 0;
+		return 1;
 	}
-	bmp* bmpImg = bmp_load(argv[1]);
-	imgObj* img = bmpToImgObj(bmpImg);
-	//grayScale(img);
-	//binarization(img);
+	
+	GError* err = NULL;
+	GdkPixbuf *img = gdk_pixbuf_new_from_file(argv[1], &err);
+
+	grayscale(img);
+	binarization(img);
+
 
 	size_t n = 0;
-	imgObj** lines = splitImgIntoLines(img, &n, 127);
-	printf("%lu lines\n", n);
-	charSet** sets = calloc(n, sizeof(charSet*));
+	charSet** chars = segmentation(img, 32, 32, 127, &n);
+
+
+	//File saving... strongly inefficient
 	
 	for (size_t i = 0; i < n; i++){
-		sets[i] = createCharSetFromLine(lines[i], 28, 28, 127);
+		size_t j = 0;
+		charSetObj* c = chars[i]->head;
+		while (c != NULL){
+
+			char *s = calloc(100, sizeof(char));
+			sprintf(s, "out/%03lu%03lu.pnj", i, j);
+			
+			gdk_pixbuf_save(c->img, s, "pnj", &err, NULL);
+			c = c->next;
+			j++;
+			free(s);
+		}
+		freeCharSet(chars[i]);
 	}
-
-	bmp* lineBmp = imgObjToBmp(img, bmpImg->file_h, bmpImg->info_h);
-	bmp_save(lineBmp, "line.bmp");
+	free(chars);
 
 
-	imgObj* tempImg = lines[3];
-	bmp* charBmp = imgObjToBmp(tempImg, bmpImg->file_h, bmpImg->info_h);
-	charBmp->info_h.width = tempImg->w;
-	charBmp->info_h.height = tempImg->h;
-	charBmp->file_h.size = tempImg->w * tempImg->h * 3;
-	bmp_save(charBmp, "char.bmp");
-
-	tempImg = sets[3]->head->img;
-	bmp* charParsedBmp = imgObjToBmp(tempImg, bmpImg->file_h, bmpImg->info_h);
-        charParsedBmp->info_h.width = tempImg->w;
-        charParsedBmp->info_h.height = tempImg->h;
-        charParsedBmp->file_h.size = tempImg->w * tempImg->h * 3;
-        bmp_save(charParsedBmp, "charParsed.bmp");
-	return 1;
+	return 0;
 }

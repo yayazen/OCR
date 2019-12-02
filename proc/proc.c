@@ -13,17 +13,23 @@ int **kernel(int size) {
 
 
 
-void grayScale(imgObj* img){
+void grayscale(GdkPixbuf* img){
 	if (img == NULL){
-		fprintf(stderr, "grayScale: NULL image\n");
+		fprintf(stderr, "grayscale: NULL image\n");
 		return;
 	}
 
 	uint8_t v = 0;
 	
-	for (size_t h = 0; h < img->h; h++){
-		for (size_t w = 0; w < img->w; w++){
-			uint8_t* pix = getPixel(img, h, w);
+	guchar* pixels = gdk_pixbuf_get_pixels(img);
+        size_t rowstride = gdk_pixbuf_get_rowstride(img);
+        size_t n_channels = gdk_pixbuf_get_n_channels(img);
+        size_t pixbufHeight = gdk_pixbuf_get_height(img);
+        size_t pixbufWidth = gdk_pixbuf_get_width(img);
+	
+	for (size_t h = 0; h < pixbufHeight; h++){
+		for (size_t w = 0; w < pixbufWidth; w++){
+			uint8_t* pix = &pixels[h * rowstride + w * n_channels];
 			v = (uint8_t) 0.2126 * pix[0] + 0.7152 * pix[1] + 0.0722 * pix[2];
 			pix[0] = v;
 			pix[1] = v;
@@ -32,30 +38,43 @@ void grayScale(imgObj* img){
 	}
 }
 
-double threshold(imgObj* img){
+double threshold(GdkPixbuf* img){
 	if (img == NULL){
 		fprintf(stderr, "threshold: NULL image\n");
 		return NAN;
 	}
 
+	guchar* pixels = gdk_pixbuf_get_pixels(img);
+        size_t rowstride = gdk_pixbuf_get_rowstride(img);
+        size_t n_channels = gdk_pixbuf_get_n_channels(img);
+        size_t pixbufHeight = gdk_pixbuf_get_height(img);
+        size_t pixbufWidth = gdk_pixbuf_get_width(img);
+
 	double sum = 0;
-	for (size_t h = 0; h < img->h; h++){
-		for (size_t w = 0; w < img->w; w++){
-			sum += getPixel(img, h, w)[0];
+	for (size_t h = 0; h < pixbufHeight; h++){
+		for (size_t w = 0; w < pixbufWidth; w++){
+			sum += pixels[h * rowstride + w * n_channels];
 		}
 	}
-	return sum / (img->h * img->w);
+	return sum / (pixbufHeight * pixbufWidth);
 }
 
-void binarization(imgObj* img){
+void binarization(GdkPixbuf* img){
 	if (img == NULL){
 		fprintf(stderr, "binarization: NULL imgae\n");
 		return;
 	}
+
+	guchar* pixels = gdk_pixbuf_get_pixels(img);
+        size_t rowstride = gdk_pixbuf_get_rowstride(img);
+        size_t n_channels = gdk_pixbuf_get_n_channels(img);
+        size_t pixbufHeight = gdk_pixbuf_get_height(img);
+        size_t pixbufWidth = gdk_pixbuf_get_width(img);
+
 	double t = threshold(img);
-	for (size_t h = 0; h < img->h; h++){
-		for (size_t w = 0; w < img->w; w++){
-			uint8_t* pix = getPixel(img, h, w);
+	for (size_t h = 0; h < pixbufHeight; h++){
+		for (size_t w = 0; w < pixbufWidth; w++){
+			uint8_t* pix = &pixels[h * rowstride + w * n_channels];
 			uint8_t p = (pix[0] > t) ? 255 : 0;
 			pix[0] = p;
 			pix[1] = p;
@@ -64,49 +83,62 @@ void binarization(imgObj* img){
 	}
 }
 
-imgObj* proximalInterpolation(imgObj* img, size_t height, size_t width){
+GdkPixbuf* proximalInterpolation(GdkPixbuf* img, size_t height, size_t width){
 	if (img == NULL){
 		fprintf(stderr, "proximalInerpolation: img is NULL\n");
 		return NULL;
 	}
 	
-	imgObj* newImg = NULL;
+	GdkPixbuf* newImg = NULL;
 
-	if (!(img->h == height && img->w == width)){
+	guchar* pixels = gdk_pixbuf_get_pixels(img);
+        size_t rowstride = gdk_pixbuf_get_rowstride(img);
+        size_t n_channels = gdk_pixbuf_get_n_channels(img);
+        size_t pixbufHeight = gdk_pixbuf_get_height(img);
+        size_t pixbufWidth = gdk_pixbuf_get_width(img);
+
+	if (!(pixbufHeight == height && pixbufWidth == width)){
 	
-		double imgAspectRatio = (double) img->w / (double) img->h ;
+		double imgAspectRatio = (double) pixbufWidth / (double) pixbufHeight ;
 		double resultAspectRatio = (double) width / (double) height;
 		double coordFact;		
 
 		if (imgAspectRatio < resultAspectRatio ){
 			// height will be the reference
 			
-			double coordRatio = (double) height / (double) img->h;
-			coordFact = (double) img->h / (double) height;
-			size_t newWidth = coordRatio * img->w;
+			double coordRatio = (double) height / (double) pixbufHeight;
+			coordFact = (double) pixbufHeight / (double) height;
+			size_t newWidth = coordRatio * pixbufWidth;
 			
-			newImg = newImgObj(height, newWidth);
+			newImg = gdk_pixbuf_new(GDK_COLORSPACE_RGB, FALSE, 8, newWidth, height);
 		
 		} else {
 			// width will be the reference
 
-			double coordRatio = (double) width / (double) img->w;
-			coordFact = (double) img->w / (double) width;
-                        size_t newHeight = coordRatio * img->h;
+			double coordRatio = (double) width / (double) pixbufWidth;
+			coordFact = (double) pixbufWidth / (double) width;
+                        size_t newHeight = coordRatio * pixbufHeight;
                         
-			newImg = newImgObj(newHeight, width);
+			newImg = gdk_pixbuf_new(GDK_COLORSPACE_RGB, FALSE, 8, width, newHeight);
 		
 		}
                 if (newImg == NULL){
-                        fprintf(stderr, "proxiamlInterpolation: could not create imgObj\n");
+                        fprintf(stderr, "proxiamlInterpolation: could not create GdkPixbuf\n");
                         return NULL;
                 }
                 
-		for (size_t h = 0; h < newImg->h; h++){
-                        for (size_t w = 0; w < newImg->w; w++){
+		guchar* new_pixels = gdk_pixbuf_get_pixels(img);
+        	size_t new_rowstride = gdk_pixbuf_get_rowstride(img);
+        	size_t new_n_channels = gdk_pixbuf_get_n_channels(img);
+        	size_t new_pixbufHeight = gdk_pixbuf_get_height(img);
+        	size_t new_pixbufWidth = gdk_pixbuf_get_width(img);
+
+
+		for (size_t h = 0; h < new_pixbufHeight; h++){
+                        for (size_t w = 0; w < new_pixbufWidth; w++){
                         
-                        	uint8_t* newPix = getPixel(newImg, h, w);
-                                uint8_t* pix = getPixel(img, h * coordFact, w * coordFact);
+                        	uint8_t* newPix = &new_pixels[h * new_rowstride + w * new_n_channels];
+                                uint8_t* pix = &pixels[((size_t)(h * coordFact)) * rowstride + ((size_t) (w * coordFact)) * n_channels];
                                 if (pix == NULL){
 					fprintf(stderr, "proximalInterpolation: could not access pixel\n");
 				}
@@ -122,20 +154,27 @@ imgObj* proximalInterpolation(imgObj* img, size_t height, size_t width){
 	return newImg;
 }
 
-imgObj* filling(imgObj* img, size_t height, size_t width){
+GdkPixbuf* filling(GdkPixbuf* img, size_t height, size_t width){
 	if (img == NULL){
 		fprintf(stderr, "filling: img is NULL\n");
 		return NULL;
 	}
-	if (img->h > height || img->w > width){
+
+	guchar* pixels = gdk_pixbuf_get_pixels(img);
+        size_t rowstride = gdk_pixbuf_get_rowstride(img);
+        size_t n_channels = gdk_pixbuf_get_n_channels(img);
+        size_t pixbufHeight = gdk_pixbuf_get_height(img);
+        size_t pixbufWidth = gdk_pixbuf_get_width(img);
+
+	if (pixbufHeight > height || pixbufWidth > width){
 		fprintf(stderr, "filling: img is larger than target size\n");
 		return NULL;
 	}
-	if (img->h == height && img->w == width){
+	if (pixbufHeight == height && pixbufWidth == width){
 		return img;
 	}
 
-	imgObj* newImg = newImgObj(height, width);
+	GdkPixbuf* newImg = gdk_pixbuf_new(GDK_COLORSPACE_RGB, FALSE, 8, width, height);
 	
 	if (newImg == NULL){
 		fprintf(stderr, "filling: could not create new image\n");
@@ -143,13 +182,16 @@ imgObj* filling(imgObj* img, size_t height, size_t width){
 	}
 
 
-	size_t startHeight = (newImg->h - img->h) / 2;
-	size_t startWidth = (newImg->w - img->w) / 2;
+	size_t startHeight = (height - pixbufHeight) / 2;
+	size_t startWidth = (width - pixbufWidth) / 2;
+	size_t new_n_channels = gdk_pixbuf_get_n_channels(newImg);
+	size_t new_rowstride = gdk_pixbuf_get_rowstride(newImg);
+	guchar* new_pixels = gdk_pixbuf_get_pixels(newImg);
 
-	for (size_t h = 0; h < img->h; h++){
-		for (size_t w = 0; w < img->w; w++){
-			uint8_t* pix = getPixel(img, h, w);
-			uint8_t* newPix = getPixel(newImg, startHeight + h, startWidth + w);
+	for (size_t h = 0; h < pixbufHeight; h++){
+		for (size_t w = 0; w < pixbufWidth; w++){
+			uint8_t* pix = &pixels[h * rowstride + w * n_channels];
+			uint8_t* newPix = &new_pixels[(startHeight + h) * new_rowstride + (startWidth + w) * new_n_channels];
 		
 			newPix[0] = pix[0];
 			newPix[1] = pix[1];
@@ -158,17 +200,17 @@ imgObj* filling(imgObj* img, size_t height, size_t width){
 	}
 
 	for (size_t h = 0; h < startHeight; h++){
-		for (size_t w = 0; w < newImg->w; w++){
-			uint8_t* pix = getPixel(newImg, h, w);
+		for (size_t w = 0; w < width; w++){
+			uint8_t* pix = &new_pixels[h * new_rowstride + w * new_n_channels];
 			pix[0] = 255;
 			pix[1] = 255;
 			pix[2] = 255;
 		}
 	}
 
-	for (size_t h = img->h + startHeight; h < newImg->h; h++){
-                for (size_t w = 0; w < newImg->w; w++){
-			uint8_t* pix = getPixel(newImg, h, w);
+	for (size_t h = pixbufHeight + startHeight; h < height; h++){
+                for (size_t w = 0; w < width; w++){
+			uint8_t* pix = &new_pixels[h * new_rowstride + w * new_n_channels];
                         pix[0] = 255;
                         pix[1] = 255;
                         pix[2] = 255;
@@ -176,17 +218,17 @@ imgObj* filling(imgObj* img, size_t height, size_t width){
         }
 
 	for (size_t w = 0; w < startWidth; w++){
-                for (size_t h = 0; h < newImg->h; h++){
-			uint8_t* pix = getPixel(newImg, h, w);
+                for (size_t h = 0; h < height; h++){
+			uint8_t* pix = &new_pixels[h * new_rowstride + w * new_n_channels];
                         pix[0] = 255;
                         pix[1] = 255;
                         pix[2] = 255;
                 }
         }
 
-	for (size_t w = img->w + startWidth; w < newImg->w; w++){
-                for (size_t h = 0; h < newImg->h; h++){
-			uint8_t* pix = getPixel(newImg, h, w);
+	for (size_t w = pixbufWidth + startWidth; w < width; w++){
+                for (size_t h = 0; h < height; h++){
+			uint8_t* pix = &new_pixels[h * new_rowstride + w * new_n_channels];
                         pix[0] = 255;
                         pix[1] = 255;
                         pix[2] = 255;
@@ -196,7 +238,7 @@ imgObj* filling(imgObj* img, size_t height, size_t width){
 	return newImg;
 }
 
-imgObj* fitImage(imgObj* img, size_t height, size_t width){
+GdkPixbuf* fitImage(GdkPixbuf* img, size_t height, size_t width){
         if (img == NULL){
                 fprintf(stderr, "fitImage: img is NULL\n");
                 return NULL;
@@ -207,10 +249,10 @@ imgObj* fitImage(imgObj* img, size_t height, size_t width){
                 return NULL;
         }
         
-	imgObj* scaledImg = proximalInterpolation(img, height, width);
-	imgObj* fittedImg = filling(scaledImg, height, width);
+	GdkPixbuf* scaledImg = proximalInterpolation(img, height, width);
+	GdkPixbuf* fittedImg = filling(scaledImg, height, width);
 	if (scaledImg != fittedImg){
-		freeImgObj(scaledImg);
+		g_object_unref(scaledImg);
 	}
 
 	return fittedImg;
@@ -266,9 +308,9 @@ double hough(size_t* points, size_t len, double precision){
 
 
 //TODO
-size_t* findPointsOfInterest(imgObj* img, size_t n){
+size_t* findPointsOfInterest(GdkPixbuf* img, size_t n){
 	if (img == NULL){
-		fprintf(stderr,"findPointsOfInterest: imgObj is NULL, could not proceed\n");
+		fprintf(stderr,"findPointsOfInterest: GdkPixbuf is NULL, could not proceed\n");
 		return NULL;
 	}
 	size_t* points = calloc(2 * n, sizeof(size_t));

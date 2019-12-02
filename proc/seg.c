@@ -39,7 +39,9 @@ void freeCharSetObj(charSetObj* setObj){
 	if (setObj == NULL)
 		return;
 	freeCharSetObj(setObj->next);
-	freeImgObj(setObj->img);
+	if (setObj->img != NULL){
+		g_object_unref(setObj->img);
+	}
 	free(setObj);
 	return;
 }
@@ -64,22 +66,28 @@ charSetObj* pushNewCharSetObj(charSet* set){
 	return elm->next;
 }
 
-imgObj** splitImgIntoLines(imgObj* img, size_t* n, uint8_t threshold){
+GdkPixbuf** splitImgIntoLines(GdkPixbuf* img, size_t* n, uint8_t threshold){
 	if (img == NULL){
 		fprintf(stderr, "splitImgIntoLines: img is NULL, could not split image\n");
 		return NULL;
 	}
-	
+
+	guchar* pixels = gdk_pixbuf_get_pixels(img);
+        size_t rowstride = gdk_pixbuf_get_rowstride(img);
+        size_t n_channels = gdk_pixbuf_get_n_channels(img);
+        size_t pixbufHeight = gdk_pixbuf_get_height(img);
+        size_t pixbufWidth = gdk_pixbuf_get_width(img);
+
 	// booleans
-	int* linesType = calloc(img->h,sizeof(int));
+	int* linesType = calloc(pixbufHeight, sizeof(int));
 	if (linesType == NULL){
 		fprintf(stderr, "splitImgIntoLines: could not allocate memory\n");
 		return NULL;
 	}
 	
-	for (size_t h = 0; h < img->h; h++){
-		for (size_t w = 0; w < img->w; w++){
-			if (getPixel(img, h, w)[0] < threshold){
+	for (size_t h = 0; h < pixbufHeight; h++){
+		for (size_t w = 0; w < pixbufWidth; w++){
+			if (pixels[h * rowstride + w * n_channels] < threshold){
 				linesType[h] = 1;
 				break;
 			}
@@ -88,7 +96,7 @@ imgObj** splitImgIntoLines(imgObj* img, size_t* n, uint8_t threshold){
 	
 	size_t count = 0;
 	int prevLine = 0;
-	for (size_t h = 0; h < img->h; h++){
+	for (size_t h = 0; h < pixbufHeight; h++){
 		if (prevLine != linesType[h]){
 			if (prevLine){
 				count++;
@@ -97,7 +105,7 @@ imgObj** splitImgIntoLines(imgObj* img, size_t* n, uint8_t threshold){
 		prevLine = linesType[h];
 	}
 	
-	imgObj** lines = calloc(count, sizeof(imgObj*));
+	GdkPixbuf** lines = calloc(count, sizeof(GdkPixbuf*));
 	if (lines == NULL){
 		fprintf(stderr, "splitImgIntoLines: could not allocate memory\n");
 		free(linesType);
@@ -107,22 +115,22 @@ imgObj** splitImgIntoLines(imgObj* img, size_t* n, uint8_t threshold){
 	prevLine = 0;
 	size_t index = 0;
 	size_t lineCount = 0;
-	for (size_t h = 0; h < img->h; h++){
+	for (size_t h = 0; h < pixbufHeight; h++){
 		if (prevLine != linesType[h]){
 			if (!prevLine){
 				lineCount = 0;
 			} else {
-				lines[index] = newImgObj(lineCount, img->w);
+				lines[index] = gdk_pixbuf_new(GDK_COLORSPACE_RGB, FALSE, 8, pixbufWidth, lineCount);
 				if (lines[index] == NULL){
 					fprintf(stderr, "splitImgIntoLines: NULL object\n");
 					free(linesType);
 					for (size_t i = 0; i < index; i++){
-						freeImgObj(lines[i]);
+						g_object_unref(lines[i]);
 					}
 					free(lines);
 					return NULL;
 				}
-				copyImgObj(img, lines[index], h - lineCount, 0);
+				copy_GdkPixbuf(img, lines[index], h - lineCount, 0);
 				index++;
 			}
 		}
@@ -139,24 +147,39 @@ imgObj** splitImgIntoLines(imgObj* img, size_t* n, uint8_t threshold){
 
 
 //TODO move into proc.c or img.c
-void copyImgObj(imgObj* src, imgObj* dst, size_t height, size_t width){
-	if (src == NULL || dst == NULL){
-		fprintf(stderr, "copyImgObj: NULL image parameters\n");
-		return;
-	}
-	
-	if (dst->h + height > src->h || dst->w + width > src->w){
-		fprintf(stderr, "copyImgObj: invalid dimensions\n");
-		return;
-	}
+void copy_GdkPixbuf(GdkPixbuf* src, GdkPixbuf* dst, size_t height, size_t width){
+        if (src == NULL || dst == NULL){
+                fprintf(stderr, "copy_GdkPixbuf: NULL image parameters\n");
+                return;
+        }
 
-	for (size_t h = height; h < height + dst->h; h++){
-		memcpy(getPixel(dst, h - height, 0), getPixel(src, h, width), 3 * sizeof(uint8_t) * dst->w);
-	}
+        size_t src_height = gdk_pixbuf_get_height(src);
+        size_t src_width = gdk_pixbuf_get_width(src);
+        size_t src_rowstride = gdk_pixbuf_get_rowstride(src);
+        size_t src_n_channels = gdk_pixbuf_get_n_channels(src);
+        guchar* src_pixels = gdk_pixbuf_get_pixels(src);
+
+        size_t dst_height = gdk_pixbuf_get_height(dst);
+        size_t dst_width = gdk_pixbuf_get_width(dst);
+        size_t dst_rowstride = gdk_pixbuf_get_rowstride(dst);
+        guchar* dst_pixels = gdk_pixbuf_get_pixels(dst);
+
+
+
+        if (dst_height + height > src_height || dst_width + width > src_width){
+                fprintf(stderr, "copy_GdkPixbuf: invalid dimensions\n");
+                return;
+        }
+
+        for (size_t h = height; h < height + dst_height; h++){
+                memcpy(&dst_pixels[(h - height) * dst_rowstride],
+                        &src_pixels[h * src_rowstride + width * src_n_channels],
+                        src_n_channels * gdk_pixbuf_get_bits_per_sample(src) * dst_width);
+        }
 }
 
 
-charSet* createCharSetFromLine(imgObj* img, size_t setHeight, size_t setWidth, uint8_t threshold){
+charSet* createCharSetFromLine(GdkPixbuf* img, size_t setHeight, size_t setWidth, uint8_t threshold){
 	if (img == NULL){
 		fprintf(stderr, "createCharSetFromLine: img is NULL, could not create charSet\n");
 		return NULL;
@@ -165,17 +188,23 @@ charSet* createCharSetFromLine(imgObj* img, size_t setHeight, size_t setWidth, u
 		fprintf(stderr, "createCharSetFromLine: incorrect set dimensions\n");
 		return NULL;
 	}
+
+	guchar* pixels = gdk_pixbuf_get_pixels(img);
+        size_t rowstride = gdk_pixbuf_get_rowstride(img);
+        size_t n_channels = gdk_pixbuf_get_n_channels(img);
+        size_t pixbufHeight = gdk_pixbuf_get_height(img);
+        size_t pixbufWidth = gdk_pixbuf_get_width(img);
 	
 	// booleans
-	int* stripType = calloc(img->w, sizeof(int));
+	int* stripType = calloc(pixbufWidth, sizeof(int));
 	if (stripType == NULL){
 		fprintf(stderr, "createCharSetFromLine: could not allocate memory\n");
 		return NULL;
 	}
 
-	for (size_t w = 0; w < img->w; w++){
-		for (size_t h = 0; h < img->h; h++){
-			uint8_t* pix = getPixel(img, h, w);
+	for (size_t w = 0; w < pixbufWidth; w++){
+		for (size_t h = 0; h < pixbufHeight; h++){
+			uint8_t* pix = &pixels[h* rowstride + w * n_channels];
 			if (pix[0] <= threshold){
 				stripType[w] = 1;
 				break;
@@ -185,7 +214,7 @@ charSet* createCharSetFromLine(imgObj* img, size_t setHeight, size_t setWidth, u
 
 	size_t count = 0;
         int prevStrip = 0;
-        for (size_t w = 0; w < img->w; w++){
+        for (size_t w = 0; w < pixbufWidth; w++){
                 if (prevStrip != stripType[w]){
                         if (prevStrip){
                                 count++;
@@ -204,7 +233,7 @@ charSet* createCharSetFromLine(imgObj* img, size_t setHeight, size_t setWidth, u
 
 	prevStrip = 0;
 	size_t stripWidth = 0;
-	for (size_t w = 0; w < img->w; w++){
+	for (size_t w = 0; w < pixbufWidth; w++){
 
 		if (prevStrip != stripType[w]){
 			
@@ -215,23 +244,23 @@ charSet* createCharSetFromLine(imgObj* img, size_t setHeight, size_t setWidth, u
 
 				//all of that definitly needs some optimization, will come in due time			
 
-				imgObj* charImg = newImgObj(img->h, stripWidth);
+				GdkPixbuf* charImg = gdk_pixbuf_new(GDK_COLORSPACE_RGB, FALSE, 8, stripWidth, pixbufHeight);
 				if (charImg == NULL){
 					fprintf(stderr, "createCharSetFromLine: could not allocate img\n");
 					freeCharSet(set);
 					free(stripType);
 					return NULL;
 				}
-				copyImgObj(img, charImg, 0, w - stripWidth);
+				copy_GdkPixbuf(img, charImg, 0, w - stripWidth);
 
 				size_t n = 0;
-				imgObj** splitChars = split_touching_characters(charImg, &n, threshold);
-				freeImgObj(charImg);
+				GdkPixbuf** splitChars = split_touching_characters(charImg, &n, threshold);
+				g_object_unref(charImg);
 
 				for (size_t i = 0; i < n; i++){
 
-					imgObj* cleanedCharImg = fitImage(splitChars[i], set->h, set->w);
-                                	freeImgObj(splitChars[i]);
+					GdkPixbuf* cleanedCharImg = fitImage(splitChars[i], set->h, set->w);
+                                	g_object_unref(splitChars[i]);
                                 	if (cleanedCharImg == NULL){
                                 	        fprintf(stderr, "createCharSetFromLine: could not resize img\n");
                                 	        freeCharSet(set);
@@ -243,7 +272,7 @@ charSet* createCharSetFromLine(imgObj* img, size_t setHeight, size_t setWidth, u
                                         	fprintf(stderr, "createCharSetFromLine: could not create charSetObj\n");
                                         	freeCharSet(set);
                                 	        free(stripType);
-                        	                freeImgObj(cleanedCharImg);
+                        	                g_object_unref(cleanedCharImg);
                 	                        return NULL;
         	                        }
 	                                elm->img = cleanedCharImg;
@@ -262,32 +291,40 @@ charSet* createCharSetFromLine(imgObj* img, size_t setHeight, size_t setWidth, u
 }
 
 
-void drop_fall(imgObj* img, uint8_t threshold){
+void drop_fall(GdkPixbuf* img, uint8_t threshold){
 	// initialize dropped pixels
-	for (size_t w = 0; w < img->w; w++){
-		if (getPixel(img, img->h-1, w)[0] > threshold){
-			getPixel(img, img->h-1, w)[0] = 127;
+
+	guchar* pixels = gdk_pixbuf_get_pixels(img);
+        size_t rowstride = gdk_pixbuf_get_rowstride(img);
+        size_t n_channels = gdk_pixbuf_get_n_channels(img);
+        size_t pixbufHeight = gdk_pixbuf_get_height(img);
+        size_t pixbufWidth = gdk_pixbuf_get_width(img);
+
+	for (size_t w = 0; w < pixbufWidth; w++){
+		uint8_t* pix = &pixels[w * n_channels];
+		if (pix[0] > threshold){
+			pix[0] = 127;
 		}
 	}
-	for (size_t h = img->h - 1; h > 0; h--){
-		for (size_t w = 0; w < img->w; w++){
-			uint8_t* pix = getPixel(img, h, w);
+	for (size_t h = 0; h < pixbufHeight - 1; h++){
+		for (size_t w = 0; w < pixbufWidth; w++){
+			uint8_t* pix = &pixels[h * rowstride + w * n_channels];
 			if (pix[0] != 127){
 				continue;
 			}
 	
-			uint8_t* pixTested = getPixel(img, h-1, w);
+			uint8_t* pixTested = &pixels[(h - 1) * rowstride + w * n_channels];
 			if (pixTested[0] == 127){
 				continue;
 			}
 			if (pixTested[0] > threshold){
-				getPixel(img, h-1, w)[0] = 127;
+				pixTested[0] = 127;
 				continue;
 			}
 
-			int endRight = (w >= img->w -1);
+			int endRight = (w >= pixbufWidth -1);
 			if (!endRight){
-				pixTested = getPixel(img, h-1, w+1);
+				pixTested = &pixels[(h - 1) * rowstride + (w + 1) * n_channels];
 				if (pixTested[0] == 127){
 					continue;
 				}
@@ -299,7 +336,7 @@ void drop_fall(imgObj* img, uint8_t threshold){
 			
 			int endLeft = (w == 0);
 			if (!endLeft){
-				pixTested = getPixel(img, h-1, w-1);
+				pixTested = &pixels[(h - 1) * rowstride + (w - 1) * n_channels];
 				if (pixTested[0] == 127){
 					continue;
 				}	
@@ -310,7 +347,7 @@ void drop_fall(imgObj* img, uint8_t threshold){
 			}
 
 			if (!endRight){
-				pixTested = getPixel(img, h, w+1);
+				pixTested = &pixels[h * rowstride + (w + 1) * n_channels];
 				if (pixTested[0] == 127){
 					continue;
 				}
@@ -321,7 +358,7 @@ void drop_fall(imgObj* img, uint8_t threshold){
 			}
 			
 			if (!endLeft){
-				pixTested = getPixel(img, h, w-1);
+				pixTested = &pixels[h * rowstride + (w - 1) * n_channels];
 				if (pixTested[0] == 127){
 					continue;
 				}
@@ -337,12 +374,19 @@ void drop_fall(imgObj* img, uint8_t threshold){
 	}
 }
 
-imgObj** split_touching_characters(imgObj* img, size_t *n, uint8_t threshold){
+GdkPixbuf** split_touching_characters(GdkPixbuf* img, size_t *n, uint8_t threshold){
 	drop_fall(img, threshold);
 	*n = 1;
 	int betweenChars = 0;
-	for (size_t w = 0; w < img->w; w++){
-		if (getPixel(img, 0, w)[0] == 127){
+
+	guchar* pixels = gdk_pixbuf_get_pixels(img);
+        size_t rowstride = gdk_pixbuf_get_rowstride(img);
+        size_t n_channels = gdk_pixbuf_get_n_channels(img);
+        size_t pixbufHeight = gdk_pixbuf_get_height(img); 
+        size_t pixbufWidth = gdk_pixbuf_get_width(img);
+
+	for (size_t w = 0; w < pixbufWidth; w++){
+		if (pixels[(pixbufHeight - 1) * rowstride + w * n_channels] == 127){
 			if (!betweenChars){
 				betweenChars = 1;
 				*n += 1;
@@ -353,19 +397,19 @@ imgObj** split_touching_characters(imgObj* img, size_t *n, uint8_t threshold){
 			}
 		}
 	}
-	imgObj** chars = calloc(*n, sizeof(imgObj*));
+	GdkPixbuf** chars = calloc(*n, sizeof(GdkPixbuf*));
 	betweenChars = 1;
 	size_t i = 0;
-        for (size_t w = 0; w < img->w; w++){
-                if (getPixel(img, 0, w)[0] == 127){
+        for (size_t w = 0; w < pixbufWidth; w++){
+                if (pixels[(pixbufHeight - 1) * rowstride + w * n_channels] == 127){
                         if (!betweenChars){
                                 betweenChars = 1;
                         }
                 } else {
                         if (betweenChars){
                                 betweenChars = 0;
-				size_t minHeight = 0, maxHeight = 0, minWidth = w, maxWidth = w;
-				__finding_character(img, 0, w, &minHeight, &maxHeight, &minWidth, &maxWidth);
+				size_t minHeight = pixbufHeight - 1, maxHeight = pixbufHeight - 1, minWidth = w, maxWidth = w;
+				__finding_character(img, pixbufHeight - 1, w, &minHeight, &maxHeight, &minWidth, &maxWidth);
 				chars[i] = copying_characters(img, minHeight, maxHeight, minWidth, maxWidth);
 				i++;
                         }
@@ -375,12 +419,18 @@ imgObj** split_touching_characters(imgObj* img, size_t *n, uint8_t threshold){
 }
 
 //recursive function; could be otpimized by using a stack
-void __finding_character(imgObj* img, size_t h, size_t w, 
+void __finding_character(GdkPixbuf* img, size_t h, size_t w, 
 	size_t *minHeight, size_t *maxHeight, size_t *minWidth, size_t *maxWidth){
 	
-	if (h >= img->h || w >= img->w)
+	guchar* pixels = gdk_pixbuf_get_pixels(img);
+        size_t rowstride = gdk_pixbuf_get_rowstride(img);
+        size_t n_channels = gdk_pixbuf_get_n_channels(img);
+        size_t pixbufHeight = gdk_pixbuf_get_height(img);
+        size_t pixbufWidth = gdk_pixbuf_get_width(img);
+
+	if (h >= pixbufHeight || w >= pixbufWidth)
 		return;
-	uint8_t *pix = getPixel(img, h, w);
+	uint8_t *pix = &pixels[h * rowstride + w * n_channels];
 	if (pix[0] == 127 || pix[0] == 128)
 		return;
 	pix[0] = 128;
@@ -402,16 +452,23 @@ void __finding_character(imgObj* img, size_t h, size_t w,
 	return;
 }
 
-imgObj* copying_characters(imgObj* src, size_t minHeight, size_t maxHeight, 
+GdkPixbuf* copying_characters(GdkPixbuf* src, size_t minHeight, size_t maxHeight, 
 	size_t minWidth, size_t maxWidth){
 	
+	guchar* src_pixels = gdk_pixbuf_get_pixels(src);
+        size_t src_rowstride = gdk_pixbuf_get_rowstride(src);
+        size_t src_n_channels = gdk_pixbuf_get_n_channels(src);
 
-	imgObj* dst = newImgObj(maxHeight - minHeight + 1, maxWidth - minWidth + 1);
+	GdkPixbuf* dst = gdk_pixbuf_new(GDK_COLORSPACE_RGB, FALSE, 8, maxWidth - minWidth + 1, maxHeight - minHeight + 1);
+
+	guchar* dst_pixels = gdk_pixbuf_get_pixels(dst);
+        size_t dst_rowstride = gdk_pixbuf_get_rowstride(dst);
+        size_t dst_n_channels = gdk_pixbuf_get_n_channels(dst);
 
 	for (size_t h = minHeight; h <= maxHeight; h++){
 		for (size_t w = minWidth; w <= maxWidth; w++){
-			uint8_t* pix = getPixel(src, h, w);
-			uint8_t* newPix = getPixel(dst, h - minHeight, w - minWidth);
+			uint8_t* pix = &src_pixels[h * src_rowstride + w * src_n_channels];
+			uint8_t* newPix = &dst_pixels[(h - minHeight) * dst_rowstride + (w - minWidth) * dst_n_channels];
 			
 			if (pix == NULL || newPix == NULL){
 				fprintf(stderr, "copying_characters: wrong dimensions\n");
@@ -435,9 +492,9 @@ imgObj* copying_characters(imgObj* src, size_t minHeight, size_t maxHeight,
 }
 
 
-charSet** segmentation(imgObj* img, size_t h, size_t w, uint8_t threshold, size_t *nLines){
+charSet** segmentation(GdkPixbuf* img, size_t h, size_t w, uint8_t threshold, size_t *nLines){
 	*nLines = 0;
-	imgObj** lines = splitImgIntoLines(img, nLines, threshold);
+	GdkPixbuf** lines = splitImgIntoLines(img, nLines, threshold);
 	charSet** sets = calloc(*nLines, sizeof(charSet*));
 	
 	for (size_t i = 0; i < *nLines; i++){

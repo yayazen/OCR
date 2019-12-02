@@ -1,18 +1,18 @@
 #ifndef SEG_H
 #define SEG_H
 
-#include "img.h"
 #include "proc.h"
 #include <stdlib.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <gdk/gdk.h>
 
 typedef struct charSetObj {
 	struct charSetObj* next;
 	// next element of linked list
-	imgObj* img;
+	GdkPixbuf* img;
 	// image of the character object
 } charSetObj;
 
@@ -44,38 +44,38 @@ charSetObj* pushNewCharSetObj(charSet *set);
 // returns pointer to created element
 // returns NULL if no element could be created and set is unchanged
 
-imgObj** splitImgIntoLines(imgObj* img, size_t* n, uint8_t threshold);
+GdkPixbuf** splitImgIntoLines(GdkPixbuf* img, size_t* n, uint8_t threshold);
 // Splits the image into image of lines of text, for each image, only a single line will be present
 // returns a pointer to an array of pointer to imaObj
 // returns NULL when an error is encountered
 
 //TODO move into proc.c or img.c
-void copyImgObj(imgObj* src, imgObj* dst, size_t height, size_t width);
+void copy_GdkPixbuf(GdkPixbuf* src, GdkPixbuf* dst, size_t height, size_t width);
 // copies an area of dst->h * dst->w from src, starting from height,width
 // note that the whole area must be inside src, if dimensions are out of bounds, 
 // the function will return with nothing changed.
 
-charSet* createCharSetFromLine(imgObj* img, size_t setHeight, size_t setWidth, uint8_t threshold);
-// this function reads and imgObj and creates a charSet linked list out of the characters found on that line.
+charSet* createCharSetFromLine(GdkPixbuf* img, size_t setHeight, size_t setWidth, uint8_t threshold);
+// this function reads and GdkPixbuf and creates a charSet linked list out of the characters found on that line.
 // "setHeigh" is the height of the image of the elements of charSet
 // "setWidth" is the width of the image of the emelents of charSet
 // this function assumes that the image is binarized, black for character pixels and white for background.
 // return a pointer to a charSet linked list
 // return NULL if an error is encountered
 
-void drop_fall(imgObj* img, uint8_t treshold);
+void drop_fall(GdkPixbuf* img, uint8_t treshold);
 // this algorithms attempts to split touching characters
 // output is a list of characters images
 
-imgObj** split_touching_characters(imgObj* img, size_t* n, uint8_t threshold);
+GdkPixbuf** split_touching_characters(GdkPixbuf* img, size_t* n, uint8_t threshold);
 
-void __finding_character(imgObj* img, size_t h, size_t w, 
+void __finding_character(GdkPixbuf* img, size_t h, size_t w, 
 	size_t *minHeight, size_t *maxHeight, size_t *minWidth, size_t *maxWidth);
 
-imgObj* copying_characters(imgObj* src, size_t minHeight, size_t maxHeight, 
+GdkPixbuf* copying_characters(GdkPixbuf* src, size_t minHeight, size_t maxHeight, 
 	size_t minWidth, size_t maxWidth);
 
-charSet** segmentation(imgObj* img, size_t h, size_t w, uint8_t threshold, size_t* nLines);
+charSet** segmentation(GdkPixbuf* img, size_t h, size_t w, uint8_t threshold, size_t* nLines);
 // Complete segmentation of an img.
 // argument h and w define the size of the output character images.
 // threshold defines the value beyond which a pixel is considered background, useful for grayscale images
