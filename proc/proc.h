@@ -1,16 +1,15 @@
 #ifndef PROC_H
 #define PROC_H
 
+typedef struct {
+	unsigned char *pixels;
 
-#include <string.h>
-#include "bmp.h"
+	int height, width;
+	int rowstride, n_chan;
 
-int **kernel(int size);
+} IMGData;
 
-void grayscale(bmp *img);
-
-double threshold(bmp *img);
-
-void binarization(bmp *img);
+void grayscale(IMGData *data);
+void binarize(IMGData *data);
 
 #endif

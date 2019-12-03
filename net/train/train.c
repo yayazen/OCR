@@ -5,13 +5,12 @@
 #include "serialize.h"
 #include "cycle.h"
 
-#include <stdio.h>
 #include <math.h>
 #include <time.h>
 #include <errno.h>  
 
 #include <gtk/gtk.h>
-#include "../main.h"
+#include "../../main.h"
 
 
 
@@ -31,26 +30,6 @@ const char labels[47] = { 48, 49, 50, 51, 52,
 				90, 97, 98, 100, 101, 102,
 				
 				103, 104, 110, 113, 114, 116 };
-
-
-
-
-
-void print_gui(const char *fmt, ...) {
-	char buf[4096];
-	va_list args;
-	va_start(args, fmt);
-	vsnprintf(buf, sizeof(buf), fmt, args);
-	va_end(args);
-		
-	mark = gtk_text_buffer_get_insert (buffer);
-	gtk_text_buffer_get_iter_at_mark (buffer, &iter, mark);
-
-	if (gtk_text_buffer_get_char_count (buffer))
-		gtk_text_buffer_insert (buffer, &iter, "\n", 1);
-	
-	gtk_text_buffer_insert (buffer, &iter, buf, -1);
-}
 
 
 
@@ -124,16 +103,16 @@ int load_gui(char *path, bool trsp) {
 
 	if ((ret = mnist_load(train_image_path, train_label_path, &train_data, &train_cnt)) 
 		|| (ret = mnist_load(test_image_path, test_label_path, &test_data, &test_cnt))) {
-		print_gui("Dataset load fail !\n");
+		print_gui(NN.buffer, "Dataset load fail !\n");
 		return ret;
 	}
 
 	
 	// Net properties
-	int scale[] = {784, 30, N};
+	int scale[] = {784, 25, 25, N};
 
 	if (!path) {
-		net = init_network(3, scale);
+		net = init_network(4, scale);
 		rand_weights(net);		
 	}
 
@@ -156,7 +135,7 @@ int load_gui(char *path, bool trsp) {
 	net->eta = LR;
 	net->alpha = 0.2;
 
-	print_gui("Success load from %s!\nData collection holds %d trains and %d tests ...\n", path, train_cnt, test_cnt);
+	print_gui(NN.buffer, "Success load from %s!\nData collection holds %d trains and %d tests ...\n", path, train_cnt, test_cnt);
 	return 0;
 }
 
@@ -171,40 +150,49 @@ void save_training(void) {
 
 
 
-int train_gui(bool TestOnly) {	
-	srand(time(NULL));
+gboolean train_gui(gpointer data) {	
+
+    if (data != NULL)
+        return FALSE;
+
+    srand(time(NULL));
 
 	bool stop;
 	float err = 0.0f, min = +HUGE_VAL;
 	int count = 0;
 
-	
-	if (!TestOnly) {
+
+	if (NN.train == 1) {
 		do {
+            while (gtk_events_pending())
+                gtk_main_iteration();
+
 			err = 0.0f;
 			stop = true;
 			for (int it = 0; it < 20; it++) {
 				EvalRand(false, false);
 				err = fmaxf(err, net->error);
-				stop = stop && ((net->error) < GOAL);
+				stop = stop && ((net->error) < NN.goal);
 			}
 
-			err = fmaxf(err, GOAL);
+			err = fmaxf(err, NN.goal);
 			min = fminf(min, err);
 
 			printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
-			printf("[ep. %d] --> Training %0.0f%%, err. %f", count, (GOAL / min) * 100, min);
+			printf("[ep. %d] --> Training %0.0f%%, err. %f", count, (NN.goal / min) * 100, min);
 
 			if (!stop) {
 				for (int it = 0; it < 100; it++) {
 					EvalRand(true, false);
 				}
 			}
-		} while(!stop && ++count < EPOCHS); 
+		} while(!stop && NN.train != 2 && ++count < EPOCHS); 
 	}
 		
 	// TEST;
-	print_gui("Epochs count %zu \n\n", count);	
+    if (NN.train > 0) {
+    	print_gui(NN.buffer, "Epochs count %zu \n\nSamples,", count);
+    }
 	int l;
 	size_t rate = count = 0;
 	size_t ans;
@@ -214,15 +202,19 @@ int train_gui(bool TestOnly) {
 		ans = net_answer(net);
 
 		if (i % SHOW == 0) 
-			print_gui("Test with %c found %c (err. %f) (eval. %f) ... ", labels[l], labels[ans], net->error,  net->out->outputs[ans]);
+			print_gui(NN.buffer, "Test with %c found %c (err. %f) (eval. %f) ... ", labels[l], labels[ans], net->error,  net->out->outputs[ans]);
 
-		if (net->error < GOAL)
+		if (net->error < NN.goal)
 			rate++;
 
 		if (l == (int) ans)
 			count++;	
 	}
 		
-	print_gui("\nSuccess %zu%% with %zu%% below %f certainty\n", count, rate, GOAL); 
-	return 0;
+	print_gui(NN.buffer, "\n[Terminate at %s] Success %zu%% with %zu%% below %f certainty\n", time_handler(), count, rate, NN.goal);
+
+    NN.event = 0;
+    gtk_button_set_label (GTK_BUTTON (TrainButton), "TRAIN");
+
+	return FALSE;
 }	

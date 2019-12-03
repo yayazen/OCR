@@ -26,9 +26,11 @@ void init_act(NET *net) {
 	net->layers[1]->act = sig;
 	net->layers[1]->dact = dsig;
 	
-	net->layers[2]->act = expf;
+	net->layers[2]->act = sig;
 	net->layers[2]->dact = dsig;
 
+	net->layers[3]->act = expf;
+	net->layers[3]->dact = dsig;
 }
 
 

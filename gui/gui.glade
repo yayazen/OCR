@@ -2,9 +2,15 @@
 <!-- Generated with glade 3.22.1 -->
 <interface>
   <requires lib="gtk+" version="3.20"/>
+  <object class="GtkAdjustment" id="adjustment1">
+    <property name="upper">0.90000000000000002</property>
+    <property name="value">0.01</property>
+    <property name="step_increment">0.01</property>
+    <property name="page_increment">10</property>
+  </object>
   <object class="GtkWindow" id="MainWindow">
     <property name="can_focus">False</property>
-    <signal name="damage-event" handler="on" swapped="no"/>
+    <property name="title" translatable="yes">OCR interface</property>
     <child>
       <placeholder/>
     </child>
@@ -24,10 +30,11 @@
                 <property name="can_focus">False</property>
                 <property name="spacing">5</property>
                 <child>
-                  <object class="GtkFileChooserButton">
+                  <object class="GtkFileChooserButton" id="IMGSelect">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="title" translatable="yes"/>
+                    <signal name="selection-changed" handler="on_IMGSelect_selection_changed" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">True</property>
@@ -59,8 +66,9 @@
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="spacing">5</property>
+                <property name="homogeneous">True</property>
                 <child>
-                  <object class="GtkImage">
+                  <object class="GtkImage" id="IMGview">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="stock">gtk-cancel</property>
@@ -68,18 +76,26 @@
                   <packing>
                     <property name="expand">True</property>
                     <property name="fill">True</property>
-                    <property name="position">0</property>
+                    <property name="position">1</property>
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkTextView">
+                  <object class="GtkScrolledWindow">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
+                    <property name="shadow_type">in</property>
+                    <child>
+                      <object class="GtkTextView" id="textview0">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="editable">False</property>
+                      </object>
+                    </child>
                   </object>
                   <packing>
-                    <property name="expand">True</property>
+                    <property name="expand">False</property>
                     <property name="fill">True</property>
-                    <property name="position">1</property>
+                    <property name="position">2</property>
                   </packing>
                 </child>
               </object>
@@ -88,6 +104,52 @@
                 <property name="fill">True</property>
                 <property name="padding">2</property>
                 <property name="position">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkBox" id="Tools">
+                <property name="can_focus">False</property>
+                <property name="spacing">4</property>
+                <child>
+                  <object class="GtkToggleButton" id="TogGray">
+                    <property name="label" translatable="yes">Grayscale</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <signal name="toggled" handler="on_TogGray_toggled" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkToggleButton">
+                    <property name="label" translatable="yes">Binarize</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <signal name="toggled" handler="on_TogBin_toggled" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <placeholder/>
+                </child>
+                <child>
+                  <placeholder/>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="padding">2</property>
+                <property name="position">2</property>
               </packing>
             </child>
           </object>
@@ -108,7 +170,7 @@
                 <property name="can_focus">False</property>
                 <property name="spacing">5</property>
                 <child>
-                  <object class="GtkFileChooserButton" id="FileSelect">
+                  <object class="GtkFileChooserButton" id="NETSelect">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="title" translatable="yes"/>
@@ -190,6 +252,9 @@
                   <object class="GtkSpinButton" id="Epsilon">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
+                    <property name="adjustment">adjustment1</property>
+                    <property name="climb_rate">0.01</property>
+                    <property name="digits">4</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -216,7 +281,7 @@
                     <property name="can_focus">True</property>
                     <property name="shadow_type">in</property>
                     <child>
-                      <object class="GtkTextView" id="textview">
+                      <object class="GtkTextView" id="textview1">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="monospace">True</property>
@@ -275,7 +340,7 @@
                     <property name="label" translatable="yes">2019 - An OCR solution as part of Epita 3rd semester</property>
                     <attributes>
                       <attribute name="font-desc" value="Linux Libertine O Semi-Bold Italic 13"/>
-                      <attribute name="foreground" value="#000000000000"/>
+                      <attribute name="foreground" value="#88888a8a8585"/>
                     </attributes>
                   </object>
                   <packing>

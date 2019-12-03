@@ -4,10 +4,10 @@
 #include "net.h"
 #include "mnist.h"
 #include <stdlib.h>
+#include <gtk/gtk.h>
 
 
-
-#define N 47
+#define N 10
 
 
 #define	bool unsigned int
@@ -22,9 +22,8 @@
 
 
 #define EPOCHS 		10000
-#define GOAL		0.001
 
-#define LR			0.15
+#define LR			0.01
 #define LR_INC		1.2
 #define	LR_DEC		0.7
 
@@ -40,11 +39,10 @@
 int load_gui(char *path, bool trsp);
 
 
-int train_gui(bool TestOnly);
+gboolean train_gui(gpointer data);
 
 void save_training(void);
 
 
 
-void print_gui(const char *fmt, ...);
 #endif
