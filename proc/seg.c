@@ -1,9 +1,9 @@
 #include "seg.h"
 
-charSet* newCharSet(size_t height, size_t width){
+charSet* new_charSet(size_t height, size_t width){
 	charSet* set = malloc(sizeof(charSet));
 	if (set == NULL){
-		fprintf(stderr, "newCharSet: could not allocate memory\n");
+		fprintf(stderr, "new_charSet: could not allocate memory\n");
 		return NULL;
 	}
 	set->head = NULL;
@@ -12,33 +12,34 @@ charSet* newCharSet(size_t height, size_t width){
 	return set;
 }
 
-charSetObj* newCharSetObj(charSet* set){
+charSetObj* new_charSetObj(charSet* set){
 	if (set == NULL){
-		fprintf(stderr, "newCharSetObj: NULL set, could not create element\n");
+		fprintf(stderr, "new_charSetObj: NULL set, could not create element\n");
 		return NULL;
 	}
 
 	charSetObj* elm = malloc(sizeof(charSetObj));
 	if (elm == NULL){
-		fprintf(stderr, "newCharSetObj: could not allocate memory\n");
+		fprintf(stderr, "new_charSetObj: could not allocate memory\n");
 		return NULL;
 	}	
 
 	elm->img = NULL;
 	elm->next = NULL;
+	elm->character = 0;
 	return elm;
 }
 
-void freeCharSet(charSet* set){
-	freeCharSetObj(set->head);
+void free_charSet(charSet* set){
+	free_charSetObj(set->head);
 	free(set);
 	return;
 }
 
-void freeCharSetObj(charSetObj* setObj){
+void free_charSetObj(charSetObj* setObj){
 	if (setObj == NULL)
 		return;
-	freeCharSetObj(setObj->next);
+	free_charSetObj(setObj->next);
 	if (setObj->img != NULL){
 		g_object_unref(setObj->img);
 	}
@@ -47,28 +48,28 @@ void freeCharSetObj(charSetObj* setObj){
 }
 
 
-charSetObj* pushNewCharSetObj(charSet* set){
+charSetObj* push_new_charSetObj(charSet* set){
 	if (set == NULL){
-		fprintf(stderr, "pushNewCharSetObj: NULL set, could not create element\n");
+		fprintf(stderr, "push_new_charSetObj: NULL set, could not create element\n");
 		return NULL;
 	}
 	
 	charSetObj* elm = set->head;
 	if (elm == NULL) {
-		set->head = newCharSetObj(set);
+		set->head = new_charSetObj(set);
 		return set->head;
 	}
 
 	while (elm->next != NULL){
 		elm = elm->next;
 	}
-	elm->next = newCharSetObj(set);
+	elm->next = new_charSetObj(set);
 	return elm->next;
 }
 
-GdkPixbuf** splitImgIntoLines(GdkPixbuf* img, size_t* n, uint8_t threshold){
+GdkPixbuf** split_img_into_lines(GdkPixbuf* img, size_t* n, uint8_t threshold){
 	if (img == NULL){
-		fprintf(stderr, "splitImgIntoLines: img is NULL, could not split image\n");
+		fprintf(stderr, "split_img_into_lines: img is NULL, could not split image\n");
 		return NULL;
 	}
 
@@ -81,7 +82,7 @@ GdkPixbuf** splitImgIntoLines(GdkPixbuf* img, size_t* n, uint8_t threshold){
 	// booleans
 	int* linesType = calloc(pixbufHeight, sizeof(int));
 	if (linesType == NULL){
-		fprintf(stderr, "splitImgIntoLines: could not allocate memory\n");
+		fprintf(stderr, "split_img_into_lines: could not allocate memory\n");
 		return NULL;
 	}
 	
@@ -107,7 +108,7 @@ GdkPixbuf** splitImgIntoLines(GdkPixbuf* img, size_t* n, uint8_t threshold){
 	
 	GdkPixbuf** lines = calloc(count, sizeof(GdkPixbuf*));
 	if (lines == NULL){
-		fprintf(stderr, "splitImgIntoLines: could not allocate memory\n");
+		fprintf(stderr, "split_img_into_lines: could not allocate memory\n");
 		free(linesType);
 		return NULL;
 	}
@@ -122,7 +123,7 @@ GdkPixbuf** splitImgIntoLines(GdkPixbuf* img, size_t* n, uint8_t threshold){
 			} else {
 				lines[index] = gdk_pixbuf_new(GDK_COLORSPACE_RGB, FALSE, 8, pixbufWidth, lineCount);
 				if (lines[index] == NULL){
-					fprintf(stderr, "splitImgIntoLines: NULL object\n");
+					fprintf(stderr, "split_img_into_lines: NULL object\n");
 					free(linesType);
 					for (size_t i = 0; i < index; i++){
 						g_object_unref(lines[i]);
@@ -179,13 +180,13 @@ void copy_GdkPixbuf(GdkPixbuf* src, GdkPixbuf* dst, size_t height, size_t width)
 }
 
 
-charSet* createCharSetFromLine(GdkPixbuf* img, size_t setHeight, size_t setWidth, uint8_t threshold){
+charSet* create_charSet_from_line(GdkPixbuf* img, size_t setHeight, size_t setWidth, uint8_t threshold){
 	if (img == NULL){
-		fprintf(stderr, "createCharSetFromLine: img is NULL, could not create charSet\n");
+		fprintf(stderr, "create_charSet_from_line: img is NULL, could not create charSet\n");
 		return NULL;
 	}
 	if (setHeight == 0 || setWidth == 0){
-		fprintf(stderr, "createCharSetFromLine: incorrect set dimensions\n");
+		fprintf(stderr, "create_charSet_from_line: incorrect set dimensions\n");
 		return NULL;
 	}
 
@@ -198,7 +199,7 @@ charSet* createCharSetFromLine(GdkPixbuf* img, size_t setHeight, size_t setWidth
 	// booleans
 	int* stripType = calloc(pixbufWidth, sizeof(int));
 	if (stripType == NULL){
-		fprintf(stderr, "createCharSetFromLine: could not allocate memory\n");
+		fprintf(stderr, "create_charSet_from_line: could not allocate memory\n");
 		return NULL;
 	}
 
@@ -223,9 +224,9 @@ charSet* createCharSetFromLine(GdkPixbuf* img, size_t setHeight, size_t setWidth
                 prevStrip = stripType[w];
         }
 	
-	charSet* set = newCharSet(setHeight, setWidth);
+	charSet* set = new_charSet(setHeight, setWidth);
 	if (set == NULL){
-		fprintf(stderr, "createCharSetFromLine: could not create charSet\n");
+		fprintf(stderr, "create_charSet_from_line: could not create charSet\n");
 		free(stripType);
 		return NULL;
 	}
@@ -246,8 +247,8 @@ charSet* createCharSetFromLine(GdkPixbuf* img, size_t setHeight, size_t setWidth
 
 				GdkPixbuf* charImg = gdk_pixbuf_new(GDK_COLORSPACE_RGB, FALSE, 8, stripWidth, pixbufHeight);
 				if (charImg == NULL){
-					fprintf(stderr, "createCharSetFromLine: could not allocate img\n");
-					freeCharSet(set);
+					fprintf(stderr, "create_charSet_from_line: could not allocate img\n");
+					free_charSet(set);
 					free(stripType);
 					return NULL;
 				}
@@ -259,18 +260,18 @@ charSet* createCharSetFromLine(GdkPixbuf* img, size_t setHeight, size_t setWidth
 
 				for (size_t i = 0; i < n; i++){
 
-					GdkPixbuf* cleanedCharImg = fitImage(splitChars[i], set->h, set->w);
+					GdkPixbuf* cleanedCharImg = fit_image(splitChars[i], set->h, set->w);
                                 	g_object_unref(splitChars[i]);
                                 	if (cleanedCharImg == NULL){
-                                	        fprintf(stderr, "createCharSetFromLine: could not resize img\n");
-                                	        freeCharSet(set);
+                                	        fprintf(stderr, "create_charSet_from_line: could not resize img\n");
+                                	        free_charSet(set);
                                 	        free(stripType);
                                 	        return NULL;
                                 	}
-                                	charSetObj* elm = pushNewCharSetObj(set);
+                                	charSetObj* elm = push_new_charSetObj(set);
                                 	if (elm == NULL){
-                                        	fprintf(stderr, "createCharSetFromLine: could not create charSetObj\n");
-                                        	freeCharSet(set);
+                                        	fprintf(stderr, "create_charSet_from_line: could not create charSetObj\n");
+                                        	free_charSet(set);
                                 	        free(stripType);
                         	                g_object_unref(cleanedCharImg);
                 	                        return NULL;
@@ -412,7 +413,7 @@ GdkPixbuf** split_touching_characters(GdkPixbuf* img, size_t *n, uint8_t thresho
                         if (betweenChars){
                                 betweenChars = 0;
 				size_t minHeight = pixbufHeight - 1, maxHeight = pixbufHeight - 1, minWidth = w, maxWidth = w;
-				__finding_character(img, pixbufHeight - 1, w, &minHeight, &maxHeight, &minWidth, &maxWidth);
+				finding_character(img, pixbufHeight - 1, w, &minHeight, &maxHeight, &minWidth, &maxWidth);
 				chars[i] = copying_characters(img, minHeight, maxHeight, minWidth, maxWidth);
 				i++;
                         }
@@ -422,7 +423,7 @@ GdkPixbuf** split_touching_characters(GdkPixbuf* img, size_t *n, uint8_t thresho
 }
 
 //recursive function; could be otpimized by using a stack
-void __finding_character(GdkPixbuf* img, size_t h, size_t w, 
+void finding_character(GdkPixbuf* img, size_t h, size_t w, 
 	size_t *minHeight, size_t *maxHeight, size_t *minWidth, size_t *maxWidth){
 	
 	guchar* pixels = gdk_pixbuf_get_pixels(img);
@@ -448,10 +449,10 @@ void __finding_character(GdkPixbuf* img, size_t h, size_t w,
 		*minWidth = w;
 	}
 	
-	__finding_character(img, h+1, w, minHeight, maxHeight, minWidth, maxWidth);
-	__finding_character(img, h-1, w, minHeight, maxHeight, minWidth, maxWidth);
-	__finding_character(img, h, w+1, minHeight, maxHeight, minWidth, maxWidth);
-	__finding_character(img, h, w-1, minHeight, maxHeight, minWidth, maxWidth);
+	finding_character(img, h+1, w, minHeight, maxHeight, minWidth, maxWidth);
+	finding_character(img, h-1, w, minHeight, maxHeight, minWidth, maxWidth);
+	finding_character(img, h, w+1, minHeight, maxHeight, minWidth, maxWidth);
+	finding_character(img, h, w-1, minHeight, maxHeight, minWidth, maxWidth);
 	return;
 }
 
@@ -492,12 +493,12 @@ GdkPixbuf* copying_characters(GdkPixbuf* src, size_t minHeight, size_t maxHeight
 
 charSet** segmentation(GdkPixbuf* img, size_t h, size_t w, uint8_t threshold, size_t *nLines){
 	*nLines = 0;
-	GdkPixbuf** lines = splitImgIntoLines(img, nLines, threshold);
+	GdkPixbuf** lines = split_img_into_lines(img, nLines, threshold);
 	charSet** sets = calloc(*nLines, sizeof(charSet*));
 	
 	
 	for (size_t i = 0; i < *nLines; i++){
-		sets[i] = createCharSetFromLine(lines[i], h, w, threshold);
+		sets[i] = create_charSet_from_line(lines[i], h, w, threshold);
 	}
 
 	return sets;

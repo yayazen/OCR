@@ -83,7 +83,7 @@ void binarization(GdkPixbuf* img){
 	}
 }
 
-GdkPixbuf* proximalInterpolation(GdkPixbuf* img, size_t height, size_t width){
+GdkPixbuf* proximal_interpolation(GdkPixbuf* img, size_t height, size_t width){
 	if (img == NULL){
 		fprintf(stderr, "proximalInerpolation: img is NULL\n");
 		return NULL;
@@ -142,7 +142,7 @@ GdkPixbuf* proximalInterpolation(GdkPixbuf* img, size_t height, size_t width){
 				size_t width = MIN(w * coordFact, pixbufWidth - 1);
                                 uint8_t* pix = &pixels[height * rowstride + width * n_channels];
                                 if (pix == NULL){
-					fprintf(stderr, "proximalInterpolation: could not access pixel\n");
+					fprintf(stderr, "proximal_interpolation: could not access pixel\n");
 				}
 				
 				newPix[0] = pix[0];
@@ -241,9 +241,9 @@ GdkPixbuf* filling(GdkPixbuf* img, size_t height, size_t width){
 	return newImg;
 }
 
-GdkPixbuf* fitImage(GdkPixbuf* img, size_t height, size_t width){
+GdkPixbuf* fit_image(GdkPixbuf* img, size_t height, size_t width){
         if (img == NULL){
-                fprintf(stderr, "fitImage: img is NULL\n");
+                fprintf(stderr, "fit_image: img is NULL\n");
                 return NULL;
         }
 
@@ -252,7 +252,7 @@ GdkPixbuf* fitImage(GdkPixbuf* img, size_t height, size_t width){
                 return NULL;
         }
         
-	GdkPixbuf* scaledImg = proximalInterpolation(img, height, width);
+	GdkPixbuf* scaledImg = proximal_interpolation(img, height, width);
 	GdkPixbuf* fittedImg = filling(scaledImg, height, width);
 	if (scaledImg != fittedImg){
 		g_object_unref(scaledImg);

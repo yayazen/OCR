@@ -53,7 +53,7 @@ int main(int argc, char** argv){
 			j++;
 			free(s);
 		}
-		freeCharSet(chars[i]);
+		free_charSet(chars[i]);
 	}
 	free(chars);
 

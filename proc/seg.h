@@ -13,6 +13,7 @@ typedef struct charSetObj {
 	struct charSetObj* next;
 	// next element of linked list
 	GdkPixbuf* img;
+	char character;
 	// image of the character object
 } charSetObj;
 
@@ -23,28 +24,28 @@ typedef struct charSet {
 	// head of the linked list
 } charSet;
 
-charSet* newCharSet(size_t height, size_t width);
+charSet* new_charSet(size_t height, size_t width);
 // creates new linked list, all elements will have an image of height*width dimension
 // return pointer to charSet object
 // return NULL if no set could be created
 // NB: does not create any element, charSet->next will be set to NULL
 
-void freeCharSet(charSet* set);
+void free_charSet(charSet* set);
 
-void freeCharSetObj(charSetObj* setObj);
+void free_charSetObj(charSetObj* setObj);
 
-charSetObj* newCharSetObj(charSet* set);
+charSetObj* new_charSetObj(charSet* set);
 // creates new element according to "set"'s dimensions
 // returns pointer to created element
 // returns NULL if no element could be created
 // NB: does not modify the "set" linked list
 
-charSetObj* pushNewCharSetObj(charSet *set);
+charSetObj* push_new_charSetObj(charSet *set);
 // creates new element and pushes it at the end of the linked list "set"
 // returns pointer to created element
 // returns NULL if no element could be created and set is unchanged
 
-GdkPixbuf** splitImgIntoLines(GdkPixbuf* img, size_t* n, uint8_t threshold);
+GdkPixbuf** split_img_into_lines(GdkPixbuf* img, size_t* n, uint8_t threshold);
 // Splits the image into image of lines of text, for each image, only a single line will be present
 // returns a pointer to an array of pointer to imaObj
 // returns NULL when an error is encountered
@@ -55,7 +56,7 @@ void copy_GdkPixbuf(GdkPixbuf* src, GdkPixbuf* dst, size_t height, size_t width)
 // note that the whole area must be inside src, if dimensions are out of bounds, 
 // the function will return with nothing changed.
 
-charSet* createCharSetFromLine(GdkPixbuf* img, size_t setHeight, size_t setWidth, uint8_t threshold);
+charSet* create_charSet_from_line(GdkPixbuf* img, size_t setHeight, size_t setWidth, uint8_t threshold);
 // this function reads and GdkPixbuf and creates a charSet linked list out of the characters found on that line.
 // "setHeigh" is the height of the image of the elements of charSet
 // "setWidth" is the width of the image of the emelents of charSet
@@ -69,7 +70,7 @@ void drop_fall(GdkPixbuf* img, uint8_t treshold);
 
 GdkPixbuf** split_touching_characters(GdkPixbuf* img, size_t* n, uint8_t threshold);
 
-void __finding_character(GdkPixbuf* img, size_t h, size_t w, 
+void finding_character(GdkPixbuf* img, size_t h, size_t w, 
 	size_t *minHeight, size_t *maxHeight, size_t *minWidth, size_t *maxWidth);
 
 GdkPixbuf* copying_characters(GdkPixbuf* src, size_t minHeight, size_t maxHeight, 
