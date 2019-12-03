@@ -4,6 +4,10 @@
 #include <stdio.h>
 #include <gdk/gdk.h>
 
+// Use with ../data/project.bmp for argument
+// Still room for improvements
+
+
 int main(int argc, char** argv){
 	if (argc < 2){
 		fprintf(stderr, "main: invalid number of argument\n");
@@ -12,6 +16,11 @@ int main(int argc, char** argv){
 	
 	GError* err = NULL;
 	GdkPixbuf *img = gdk_pixbuf_new_from_file(argv[1], &err);
+
+	if (err != NULL){
+		fprintf(stderr, "Could not load file\n");
+		return 1;
+	}
 
 	grayscale(img);
 	binarization(img);
@@ -29,9 +38,17 @@ int main(int argc, char** argv){
 		while (c != NULL){
 
 			char *s = calloc(100, sizeof(char));
-			sprintf(s, "out/%03lu%03lu.pnj", i, j);
+			sprintf(s, "out/%03lu%03lu.bmp", i, j);
 			
-			gdk_pixbuf_save(c->img, s, "pnj", &err, NULL);
+			gdk_pixbuf_save(c->img, s, "bmp", &err, NULL);
+			if (err != NULL){
+				fprintf(stderr, "Could not save file %s\n", s);
+				
+				
+				
+				return 1;
+			}
+
 			c = c->next;
 			j++;
 			free(s);

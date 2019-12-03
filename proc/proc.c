@@ -127,18 +127,20 @@ GdkPixbuf* proximalInterpolation(GdkPixbuf* img, size_t height, size_t width){
                         return NULL;
                 }
                 
-		guchar* new_pixels = gdk_pixbuf_get_pixels(img);
-        	size_t new_rowstride = gdk_pixbuf_get_rowstride(img);
-        	size_t new_n_channels = gdk_pixbuf_get_n_channels(img);
-        	size_t new_pixbufHeight = gdk_pixbuf_get_height(img);
-        	size_t new_pixbufWidth = gdk_pixbuf_get_width(img);
+		guchar* new_pixels = gdk_pixbuf_get_pixels(newImg);
+        	size_t new_rowstride = gdk_pixbuf_get_rowstride(newImg);
+        	size_t new_n_channels = gdk_pixbuf_get_n_channels(newImg);
+        	size_t new_pixbufHeight = gdk_pixbuf_get_height(newImg);
+        	size_t new_pixbufWidth = gdk_pixbuf_get_width(newImg);
 
 
 		for (size_t h = 0; h < new_pixbufHeight; h++){
                         for (size_t w = 0; w < new_pixbufWidth; w++){
                         
                         	uint8_t* newPix = &new_pixels[h * new_rowstride + w * new_n_channels];
-                                uint8_t* pix = &pixels[((size_t)(h * coordFact)) * rowstride + ((size_t) (w * coordFact)) * n_channels];
+				size_t height = MIN(h * coordFact, pixbufHeight - 1);
+				size_t width = MIN(w * coordFact, pixbufWidth - 1);
+                                uint8_t* pix = &pixels[height * rowstride + width * n_channels];
                                 if (pix == NULL){
 					fprintf(stderr, "proximalInterpolation: could not access pixel\n");
 				}
@@ -151,6 +153,7 @@ GdkPixbuf* proximalInterpolation(GdkPixbuf* img, size_t height, size_t width){
                 }
 		
 	}
+	
 	return newImg;
 }
 

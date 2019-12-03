@@ -4,7 +4,7 @@ CFLAGS= -Wall -Wextra -std=c99 -O2 `pkg-config gtk+-3.0 --cflags --libs`
 LDFLAGS =
 LDLIBS= -lm `pkg-config gtk+-3.0 --cflags --libs`
 
-SRC = proc.c bmp.c img.c seg.c
+SRC = proc.c seg.c
 TESTSRC = segTesting.c
 
 OBJ = ${SRC:.c=.o}
