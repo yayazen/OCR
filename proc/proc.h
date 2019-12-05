@@ -12,7 +12,7 @@ void grayscale(GdkPixbuf* img);
 
 double threshold(GdkPixbuf* img);
 
-void binarization(GdkPixbuf* img);
+void binarization(GdkPixbuf* img, double t);
 
 GdkPixbuf* proximal_interpolation(GdkPixbuf* img, size_t height, size_t width);
 // uses proximal interpolation to resize image without changing the aspect ratio,

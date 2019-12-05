@@ -59,7 +59,7 @@ double threshold(GdkPixbuf* img){
 	return sum / (pixbufHeight * pixbufWidth);
 }
 
-void binarization(GdkPixbuf* img){
+void binarization(GdkPixbuf* img, double t){
 	if (img == NULL){
 		fprintf(stderr, "binarization: NULL imgae\n");
 		return;
@@ -71,7 +71,6 @@ void binarization(GdkPixbuf* img){
         size_t pixbufHeight = gdk_pixbuf_get_height(img);
         size_t pixbufWidth = gdk_pixbuf_get_width(img);
 
-	double t = threshold(img);
 	for (size_t h = 0; h < pixbufHeight; h++){
 		for (size_t w = 0; w < pixbufWidth; w++){
 			uint8_t* pix = &pixels[h * rowstride + w * n_channels];

@@ -259,6 +259,11 @@ charSet* create_charSet_from_line(GdkPixbuf* img, size_t setHeight, size_t setWi
 				g_object_unref(charImg);
 
 				for (size_t i = 0; i < n; i++){
+					
+					if (splitChars[i] == NULL){
+						continue;
+					}
+
 
 					GdkPixbuf* cleanedCharImg = fit_image(splitChars[i], set->h, set->w);
                                 	g_object_unref(splitChars[i]);
@@ -279,7 +284,7 @@ charSet* create_charSet_from_line(GdkPixbuf* img, size_t setHeight, size_t setWi
 	                                elm->img = cleanedCharImg;
 
 				}
-				
+				free(splitChars);
 			}
 		}
 		stripWidth++;
@@ -414,7 +419,7 @@ GdkPixbuf** split_touching_characters(GdkPixbuf* img, size_t *n, uint8_t thresho
                                 betweenChars = 0;
 				size_t minHeight = pixbufHeight - 1, maxHeight = pixbufHeight - 1, minWidth = w, maxWidth = w;
 				finding_character(img, pixbufHeight - 1, w, &minHeight, &maxHeight, &minWidth, &maxWidth);
-				chars[i] = copying_characters(img, minHeight, maxHeight, minWidth, maxWidth);
+				chars[i] = copying_characters(img, minHeight, maxHeight, minWidth, maxWidth, threshold);
 				i++;
                         }
                 }
@@ -457,7 +462,7 @@ void finding_character(GdkPixbuf* img, size_t h, size_t w,
 }
 
 GdkPixbuf* copying_characters(GdkPixbuf* src, size_t minHeight, size_t maxHeight, 
-	size_t minWidth, size_t maxWidth){
+	size_t minWidth, size_t maxWidth, uint8_t threshold){
 	
 	guchar* src_pixels = gdk_pixbuf_get_pixels(src);
         size_t src_rowstride = gdk_pixbuf_get_rowstride(src);
@@ -476,9 +481,15 @@ GdkPixbuf* copying_characters(GdkPixbuf* src, size_t minHeight, size_t maxHeight
 			
 			if (pix[0] == 128){
 				pix[0] = 127;
-				newPix[0] = pix[1];
-				newPix[1] = pix[1];
-				newPix[2] = pix[1];
+				if (pix[1] > threshold){
+					newPix[0] = 255;
+					newPix[1] = 255;
+					newPix[2] = 255;
+				} else {
+					newPix[0] = pix[1];
+					newPix[1] = pix[1];
+					newPix[2] = pix[1];
+				}
 			} else {
 				newPix[0] = 255;
 				newPix[1] = 255;
@@ -499,7 +510,9 @@ charSet** segmentation(GdkPixbuf* img, size_t h, size_t w, uint8_t threshold, si
 	
 	for (size_t i = 0; i < *nLines; i++){
 		sets[i] = create_charSet_from_line(lines[i], h, w, threshold);
+		g_object_unref(lines[i]);
 	}
+	free(lines);
 
 	return sets;
 }
