@@ -1,6 +1,7 @@
 #ifndef GUI_H
 #define GUI_H
 
+#include "seg.h"
 #include "proc.h"
 
 typedef struct
@@ -11,8 +12,9 @@ typedef struct
 
 typedef struct {
     GtkWidget   *Select;
+    GtkWidget   *fsave;
 
-    GtkWidget   *view;
+    GtkWidget       *view;
     GtkTextBuffer   *buffer;
     
     gboolean    loaded;
@@ -20,29 +22,35 @@ typedef struct {
     guint       event, train;
 } Itf;
 
+/* net */
 Itf NN;
-GtkWidget       *TrainButton;
+GtkWidget       *NNsave;
 
 GtkWidget       *window;
 
-GtkWidget       *drawer;
-
+/* image */
 GtkWidget       *ToolProc;
 GtkWidget       *IMGSelect;
-GtkWidget       *IMGview;
+GtkWidget       *IMGShow;
 GdkPixbuf       *Pixbuf;
-IMGData         img;
 
+charSet         **set;
+GtkIconView       *IconView;
+GtkListStore   *store;
+
+/* print */
 GtkWidget       *img_view;
-
 GtkTextBuffer   *img_buffer;
 
 GtkTextMark     *mark;
 GtkTextIter     iter;
 
+/* button */
 GtkWidget       *button0;
 GtkWidget       *Spin;
+GtkWidget       *TrainButton;
 
+/* init */
 SGlobalData data;        
 GError *error;        
 gchar *filename;

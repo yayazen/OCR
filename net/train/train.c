@@ -103,7 +103,7 @@ int load_gui(char *path, bool trsp) {
 
 	if ((ret = mnist_load(train_image_path, train_label_path, &train_data, &train_cnt)) 
 		|| (ret = mnist_load(test_image_path, test_label_path, &test_data, &test_cnt))) {
-		print_gui(NN.buffer, "Dataset load fail !\n");
+		print_gui(NN.buffer, "[Failed] Dataset load ! (Returns %d)\n", ret);
 		return ret;
 	}
 
@@ -140,8 +140,8 @@ int load_gui(char *path, bool trsp) {
 }
 
 
-void save_training(void) {
-	serialize_net(net, "save.nd");
+void save_training(const char *file) {
+	serialize_net(net, file);
 	free_network(net);
 }
 

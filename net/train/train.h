@@ -41,7 +41,7 @@ int load_gui(char *path, bool trsp);
 
 gboolean train_gui(gpointer data);
 
-void save_training(void);
+void save_training(const char *file);
 
 
 
