@@ -7,16 +7,13 @@ charSet* new_charSet(size_t height, size_t width){
 		return NULL;
 	}
 	set->head = NULL;
+	set->tail = NULL;
 	set->h = height;
 	set->w = width;
 	return set;
 }
 
-charSetObj* new_charSetObj(charSet* set){
-	if (set == NULL){
-		fprintf(stderr, "new_charSetObj: NULL set, could not create element\n");
-		return NULL;
-	}
+charSetObj* new_charSetObj(){
 
 	charSetObj* elm = malloc(sizeof(charSetObj));
 	if (elm == NULL){
@@ -27,6 +24,7 @@ charSetObj* new_charSetObj(charSet* set){
 	elm->img = NULL;
 	elm->next = NULL;
 	elm->character = 0;
+	elm->npix = 0;
 	return elm;
 }
 
@@ -54,16 +52,15 @@ charSetObj* push_new_charSetObj(charSet* set){
 		return NULL;
 	}
 	
-	charSetObj* elm = set->head;
+	charSetObj* elm = set->tail;
 	if (elm == NULL) {
-		set->head = new_charSetObj(set);
+		set->head = new_charSetObj();
+		set->tail = set->head;
 		return set->head;
 	}
 
-	while (elm->next != NULL){
-		elm = elm->next;
-	}
-	elm->next = new_charSetObj(set);
+	elm->next = new_charSetObj();
+	set->tail = elm->next;
 	return elm->next;
 }
 
@@ -240,6 +237,8 @@ charSet* create_charSet_from_line(GdkPixbuf* img, size_t setHeight, size_t setWi
 			
 
 			if (prevStrip == 0){
+				charSetObj* elm = push_new_charSetObj(set);
+				elm->npix = stripWidth;
 				stripWidth = 0;
 			} else {
 
@@ -501,6 +500,67 @@ GdkPixbuf* copying_characters(GdkPixbuf* src, size_t minHeight, size_t maxHeight
 	return dst;
 }
 
+void convert_pix_len_chars(charSet* set){
+	charSetObj* elm = set->head;
+	if (elm == NULL || elm->next == NULL)
+		return;
+	size_t n = 0;
+	size_t pixLen = 0;
+	for (; elm->next != NULL; elm = elm->next){
+		if (elm->img != NULL)
+			continue;
+		n++;
+		pixLen += elm->npix;
+	}
+	pixLen -= set->head->npix;
+	n -= (set->head->img != NULL);
+	
+	double avrg;
+	if (n > 0){
+		avrg = pixLen / n;
+	} else {
+		avrg = 5;
+	}
+	charSetObj* elm1 = set->head;
+	elm = elm1->next;
+	pixLen = 0;
+	n = 0;
+	while (elm != NULL && elm->next != NULL){
+		if (elm->img == NULL){
+			if (elm->npix > avrg){
+				elm->character = ' ';
+				pixLen += elm->npix;
+				n++;
+			} else {
+				elm = elm->next;
+				elm1->next->next = NULL;
+				free_charSetObj(elm1->next);
+				elm1->next = elm;
+			}
+		}
+		elm1 = elm;
+		elm = elm->next;
+	}
+	if (set->head->img != NULL)
+		return;
+
+	if (n > 0){
+		avrg = pixLen / n;
+	} else {
+		avrg = 5;
+	}
+
+	elm = set->head;
+	
+	if (elm->npix >= avrg * SEG_TAB_SPACE_EQ){
+		elm->character = '\t';
+	} else {
+		elm->character = ' ';
+	}
+	
+
+}
+
 
 charSet** segmentation(GdkPixbuf* img, size_t h, size_t w, uint8_t threshold, size_t *nLines){
 	*nLines = 0;
@@ -511,6 +571,7 @@ charSet** segmentation(GdkPixbuf* img, size_t h, size_t w, uint8_t threshold, si
 	for (size_t i = 0; i < *nLines; i++){
 		sets[i] = create_charSet_from_line(lines[i], h, w, threshold);
 		g_object_unref(lines[i]);
+		convert_pix_len_chars(sets[i]);
 	}
 	free(lines);
 

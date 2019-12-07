@@ -28,11 +28,11 @@ int main(int argc, char** argv){
 	uint8_t threshold = 100;
 
 	grayscale(img);
-	binarization(img, 100);
+	binarization(img, threshold);
 
 
 	size_t n = 0;
-	charSet** chars = segmentation(img, 64, 64, 100, &n);
+	charSet** chars = segmentation(img, 64, 64, threshold, &n);
 
 
 	//File saving... strongly inefficient
@@ -41,7 +41,11 @@ int main(int argc, char** argv){
 		size_t j = 0;
 		charSetObj* c = chars[i]->head;
 		while (c != NULL){
-
+			if (c->img == NULL){
+				c = c->next;
+				j++;
+				continue;
+			}
 			char *s = calloc(100, sizeof(char));
 			sprintf(s, "out/%03lu%03lu.bmp", i, j);
 			

@@ -1,8 +1,8 @@
 CC=gcc
-CFLAGS= -Wall -Wextra -std=c99 -O2 `pkg-config gtk+-3.0 --cflags --libs`
+CFLAGS= -Wall -Wextra -std=c99 -O2 `pkg-config gtk+-3.0 --cflags --libs` -fsanitize=address
 
 LDFLAGS =
-LDLIBS= -lm `pkg-config gtk+-3.0 --cflags --libs`
+LDLIBS= -lm `pkg-config gtk+-3.0 --cflags --libs` -fsanitize=address
 
 SRC = proc.c seg.c
 TESTSRC = segTesting.c

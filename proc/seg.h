@@ -9,11 +9,14 @@
 #include <string.h>
 #include <gdk/gdk.h>
 
+#define SEG_TAB_SPACE_EQ 4
+
 typedef struct charSetObj {
 	struct charSetObj* next;
 	// next element of linked list
 	GdkPixbuf* img;
 	char character;
+	size_t npix;
 	// image of the character object
 } charSetObj;
 
@@ -21,6 +24,7 @@ typedef struct charSet {
         size_t h, w;
 	// height and width of element's images
         charSetObj* head;
+	charSetObj* tail;
 	// head of the linked list
 } charSet;
 
@@ -34,7 +38,7 @@ void free_charSet(charSet* set);
 
 void free_charSetObj(charSetObj* setObj);
 
-charSetObj* new_charSetObj(charSet* set);
+charSetObj* new_charSetObj();
 // creates new element according to "set"'s dimensions
 // returns pointer to created element
 // returns NULL if no element could be created
@@ -78,6 +82,9 @@ void finding_character(GdkPixbuf* img, size_t h, size_t w,
 GdkPixbuf* copying_characters(GdkPixbuf* src, size_t minHeight, size_t maxHeight, 
 	size_t minWidth, size_t maxWidth, uint8_t threshold);
 // copies a character from an imaged passed through finding_characters and drop_fall into a clean image
+
+void convert_pix_len_chars(charSet* set);
+// converts empty characters to space and tab (tab only for the first character if lenght is >= SEG_TAB_SPACE_EQ)
 
 charSet** segmentation(GdkPixbuf* img, size_t h, size_t w, uint8_t threshold, size_t* nLines);
 // Complete segmentation of an img.
