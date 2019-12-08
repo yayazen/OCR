@@ -46,7 +46,6 @@ void image_denoise(GdkPixbuf *image)
         }
     }
 }
-
 int main(int argc, char **argv) {
     if (argc != 2)
         return -1;
@@ -54,6 +53,6 @@ int main(int argc, char **argv) {
     GdkPixbuf *pixel = gdk_pixbuf_new_from_file (argv[1], NULL);
     image_denoise(pixel);
 
-    gdk_pixbuf_save(pixel, "out.jpg", "jpg", NULL, NULL);
+    gdk_pixbuf_save(pixel, "out.jpg", "jpeg", NULL, NULL);
     return 0;
 }
