@@ -284,6 +284,7 @@ charSet* create_charSet_from_line(GdkPixbuf* img, size_t setHeight, size_t setWi
 
 				}
 				free(splitChars);
+				stripWidth = 0;
 			}
 		}
 		stripWidth++;
@@ -526,7 +527,7 @@ void convert_pix_len_chars(charSet* set){
 	
 	double avrg;
 	if (n > 0){
-		avrg = pixLen / n;
+		avrg = ((double)pixLen / (double)n) * 1.25;
 	} else {
 		avrg = 5;
 	}
