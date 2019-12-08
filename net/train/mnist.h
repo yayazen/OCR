@@ -58,13 +58,25 @@ void print2D(float data[784]) {
 	for (int i = 0; i < 28; i++) {
 		for (int j = 0; j < 28; j++) {
 			
-			if (data[i * 28 + j] > 0)
+			if (data[i * 28 + j] > 0.0f)
 				printf("#");
-			else
-				printf(" ");
+            else
+                printf(" ");
 		}
 
 		printf("\n");
+	}
+}
+
+
+
+void round2D(float data[784]) {
+	for (int i = 0; i < 28; i++) {
+		for (int j = 0; j < 28; j++) {
+		    if (data[i * 28 + j] != 0.0f) {
+                data[i * 28 + j] = 1.0f;
+            }
+		}
 	}
 }
 
@@ -126,13 +138,15 @@ _STATIC int mnist_load(
 	}
 
 	fread(tmp, 1, 4, ifp);
-	if (mnist_bin_to_int(tmp) != 2051) {
+
+    if (mnist_bin_to_int(tmp) != 2051) {
 		return_code = -2; /* Not a valid image file */
 		goto cleanup;
 	}
 
 	fread(tmp, 1, 4, lfp);
-	if (mnist_bin_to_int(tmp) != 2049) {
+	
+    if (mnist_bin_to_int(tmp) != 2049) {
 		return_code = -3; /* Not a valid label file */
 		goto cleanup;
 	}

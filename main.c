@@ -12,6 +12,7 @@
 
 void on_MainWindow_destroy(void) {
     printf("Thanks, closing gui now ...\n");
+    gtk_widget_destroy(window);
     gtk_main_quit();
 }
 
@@ -78,6 +79,10 @@ void on_Clear_clicked (void) {
 }
 
 
+void on_Clear2_clicked (void) {
+    gtk_text_buffer_set_text(img_buffer, "", -1);
+    gtk_text_view_set_buffer ( GTK_TEXT_VIEW (img_view), img_buffer);
+}
 
 void on_Load_clicked (void) {
     if (NN.event != 0)
@@ -87,8 +92,6 @@ void on_Load_clicked (void) {
             NN.loaded = TRUE;
     }
 }
-
-
 
 
 
@@ -146,7 +149,8 @@ void on_IMGSelect_selection_changed (void) {
     }
 
     IMG_loaded = true;
-            
+
+    gtk_list_store_clear (store);    
     gtk_widget_show (ToolProc);
     print_gui(img_buffer, " [Success] Load from location %s\n + Tools unlocked ...\n", file);
 }
@@ -172,18 +176,18 @@ void on_TogBin_toggled(void) {
 }
 
 
-
 void on_TogSeg_toggled(void) {
     GdkPixbuf *buf = Pixbuf;
 
-    set = segmentation(buf, 28, 28, 100, &len);
+    set = segmentation(buf, 28, 28, 100, &len, 5);
     if (!set) {
         print_gui(img_buffer, " [Failed] Segmentation failure !\n");
+        return;
     }
 
     GtkTreeIter it;
     print_gui(img_buffer, " [Success] Document has %ld different lines!\n", len);
-    
+
     for (size_t i = 0; i < len; i++) {
         charSetObj *c = set[i]->head;
 
@@ -202,10 +206,39 @@ void on_TogSeg_toggled(void) {
             c = c->next;
         }
     }
+
 }
 
 
 
+void on_TogStart_toggled(void) {
+    float data[784];
+    char c;
+    charSetObj *el;
+    
+    char *str = calloc(len * 100, sizeof(char));
+
+    size_t i = 0;
+    for (size_t l = 0; l < len; l++) {
+        el = set[l]->head;
+        while (el != NULL) {
+            if (el->img != NULL) {
+                fconv(el->img, data);
+                c = process(data);
+                printf("Ans -> %c\n", c);
+                str[i++] = c;
+                //getchar();
+            }
+            else {
+                str[i++] = ' ';
+            }
+            el = el->next;
+        }
+        str[i++] = '\n'; 
+    }
+    print_gui(img_buffer, "[Started at %s] Recognition results :\n %s", time_handler(), str);
+    free(str);
+}
 
 
 /* Main iteration */
@@ -241,6 +274,7 @@ int main(int argc, char *argv [])
     Callback signals for button are managed by the xml file*/
     window = GTK_WIDGET(gtk_builder_get_object (data.builder, "MainWindow"));
 
+    Stock = GTK_IMAGE(gtk_builder_get_object (data.builder, "StockImg"));
     /*NN Widgets*/
     NN.Select = GTK_WIDGET(gtk_builder_get_object (data.builder, "NETSelect"));
     NN.fsave = GTK_WIDGET(gtk_builder_get_object (data.builder, "NNEntry"));

@@ -2,6 +2,11 @@
 <!-- Generated with glade 3.22.1 -->
 <interface>
   <requires lib="gtk+" version="3.20"/>
+  <object class="GtkImage" id="StockImg">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-no</property>
+  </object>
   <object class="GtkListStore" id="Store1">
     <columns>
       <!-- column-name icon -->
@@ -13,11 +18,6 @@
     <property name="value">0.01</property>
     <property name="step_increment">0.01</property>
     <property name="page_increment">10</property>
-  </object>
-  <object class="GtkImage" id="image1">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="stock">gtk-no</property>
   </object>
   <object class="GtkWindow" id="MainWindow">
     <property name="can_focus">False</property>
@@ -138,13 +138,14 @@
                         <property name="can_focus">False</property>
                         <property name="spacing">3</property>
                         <child>
-                          <object class="GtkToggleButton">
+                          <object class="GtkToggleButton" id="TogStart">
                             <property name="label" translatable="yes">  START</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
-                            <property name="image">image1</property>
+                            <property name="image">StockImg</property>
                             <property name="always_show_image">True</property>
+                            <signal name="toggled" handler="on_TogStart_toggled" swapped="no"/>
                           </object>
                           <packing>
                             <property name="expand">False</property>
@@ -173,7 +174,18 @@
                           <placeholder/>
                         </child>
                         <child>
-                          <placeholder/>
+                          <object class="GtkButton" id="Clear2">
+                            <property name="label" translatable="yes">Clear</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <signal name="clicked" handler="on_Clear2_clicked" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">3</property>
+                          </packing>
                         </child>
                       </object>
                       <packing>
@@ -192,6 +204,7 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="editable">False</property>
+                            <property name="cursor_visible">False</property>
                           </object>
                         </child>
                       </object>
@@ -472,6 +485,9 @@
                       <object class="GtkTextView" id="textview1">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
+                        <property name="editable">False</property>
+                        <property name="indent">4</property>
+                        <property name="cursor_visible">False</property>
                         <property name="monospace">True</property>
                       </object>
                     </child>

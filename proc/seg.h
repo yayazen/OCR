@@ -60,7 +60,7 @@ void copy_GdkPixbuf(GdkPixbuf* src, GdkPixbuf* dst, size_t height, size_t width)
 // note that the whole area must be inside src, if dimensions are out of bounds, 
 // the function will return with nothing changed.
 
-charSet* create_charSet_from_line(GdkPixbuf* img, size_t setHeight, size_t setWidth, uint8_t threshold);
+charSet* create_charSet_from_line(GdkPixbuf* img, size_t setHeight, size_t setWidth, uint8_t threshold, size_t border);
 // this function reads the img line and creates a charSet linked list out of the characters found on that line.
 // "setHeigh" is the height of the image of the elements of charSet
 // "setWidth" is the width of the image of the emelents of charSet
@@ -76,7 +76,7 @@ GdkPixbuf** split_touching_characters(GdkPixbuf* img, size_t* n, uint8_t thresho
 // splits the touching characters in an image using drop_fall. 
 
 void finding_character(GdkPixbuf* img, size_t h, size_t w, 
-	size_t *minHeight, size_t *maxHeight, size_t *minWidth, size_t *maxWidth);
+	size_t *minHeight, size_t *maxHeight, size_t *minWidth, size_t *maxWidth, int* foundBot, uint8_t threshold);
 // helps identifying the boundaries of a character in an imaged passed through drop_fall
 
 GdkPixbuf* copying_characters(GdkPixbuf* src, size_t minHeight, size_t maxHeight, 
@@ -86,7 +86,7 @@ GdkPixbuf* copying_characters(GdkPixbuf* src, size_t minHeight, size_t maxHeight
 void convert_pix_len_chars(charSet* set);
 // converts empty characters to space and tab (tab only for the first character if lenght is >= SEG_TAB_SPACE_EQ)
 
-charSet** segmentation(GdkPixbuf* img, size_t h, size_t w, uint8_t threshold, size_t* nLines);
+charSet** segmentation(GdkPixbuf* img, size_t h, size_t w, uint8_t threshold, size_t* nLines, size_t border);
 // Complete segmentation of an img.
 // argument h and w define the size of the output character images.
 // threshold defines the value beyond which a pixel is considered background, useful for grayscale images

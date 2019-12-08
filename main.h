@@ -28,6 +28,7 @@ GtkWidget       *NNsave;
 
 GtkWidget       *window;
 
+GtkImage        *Stock;
 /* image */
 GtkWidget       *ToolProc;
 GtkWidget       *IMGSelect;

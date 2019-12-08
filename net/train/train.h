@@ -2,12 +2,11 @@
 #define TRAIN_H
 
 #include "net.h"
-#include "mnist.h"
 #include <stdlib.h>
 #include <gtk/gtk.h>
 
 
-#define N 10
+#define N 26
 
 
 #define	bool unsigned int
@@ -35,9 +34,9 @@
 #define GUI			true
 	
 
+char process(float data[784]);
 
 int load_gui(char *path, bool trsp);
-
 
 gboolean train_gui(gpointer data);
 

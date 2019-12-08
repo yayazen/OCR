@@ -3,6 +3,25 @@
 
 #define PI 3.141592
 
+
+void fconv(GdkPixbuf *src, float dst[784]) {
+	guchar* pixels = gdk_pixbuf_get_pixels(src);
+    size_t rowstride = gdk_pixbuf_get_rowstride(src);
+    size_t n_channels = gdk_pixbuf_get_n_channels(src);
+    size_t height = gdk_pixbuf_get_height(src);
+    size_t width = gdk_pixbuf_get_width(src);
+
+    uint8_t *px;
+    printf("h : %ld, w : %ld\n", height, width);
+    for (size_t i = 0; i < height; i++) {
+        for (size_t j = 0; j < width; j++) {
+            
+            px = pixels + i * rowstride + j * n_channels;
+            dst[i * height + j] = (px[0] == 255) ? 0.0f : 1.0f;
+        }
+    }
+}
+
 int **kernel(int size) {
 	int **k = malloc(size * sizeof(int *));
 	for(int r = 0; r < size; r++) {
@@ -241,7 +260,7 @@ GdkPixbuf* filling(GdkPixbuf* img, size_t height, size_t width){
 	return newImg;
 }
 
-GdkPixbuf* fit_image(GdkPixbuf* img, size_t height, size_t width){
+GdkPixbuf* fit_image(GdkPixbuf* img, size_t height, size_t width, size_t border){
         if (img == NULL){
                 fprintf(stderr, "fit_image: img is NULL\n");
                 return NULL;
@@ -252,7 +271,7 @@ GdkPixbuf* fit_image(GdkPixbuf* img, size_t height, size_t width){
                 return NULL;
         }
         
-	GdkPixbuf* scaledImg = proximal_interpolation(img, height, width);
+	GdkPixbuf* scaledImg = proximal_interpolation(img, height - border, width - border);
 	GdkPixbuf* fittedImg = filling(scaledImg, height, width);
 	if (scaledImg != fittedImg){
 		g_object_unref(scaledImg);
@@ -260,6 +279,8 @@ GdkPixbuf* fit_image(GdkPixbuf* img, size_t height, size_t width){
 
 	return fittedImg;
 }
+
+
 
 double hough(size_t* points, size_t len, double precision){
 	size_t angles = (size_t) 360/precision;

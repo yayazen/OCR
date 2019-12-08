@@ -4,6 +4,7 @@
 #include "train.h"
 #include "serialize.h"
 #include "cycle.h"
+#include "mnist.h"
 
 #include <math.h>
 #include <time.h>
@@ -13,8 +14,41 @@
 #include "../../main.h"
 
 
+const char labels[26] = { 97, 98, 99, 100,
 
+                101, 102, 103, 104, 105, 106, 
+
+                107, 108, 109, 110, 111, 112, 
+
+                113, 114, 115, 116, 117, 118, 
+
+                119, 120, 121, 122
+};
+
+/*
+const char labels[62] = { 48, 49, 50, 51, 52,
+
+                53, 54, 55, 56, 57, 65, 66,
+
+                67, 68, 68, 70, 71, 72, 73,
+
+                74, 75, 76, 77, 78, 79, 80,
+
+                81, 82, 83, 84, 85, 86, 87,
+
+                88, 89, 90, 97, 98, 99, 100,
+
+                101, 102, 103, 104, 105, 106, 
+
+                107, 108, 109, 110, 111, 112, 
+
+                113, 114, 115, 116, 117, 118, 
+
+                119, 120, 121, 122
+};
+*/
 /* NIST balanced mapping */
+/*
 const char labels[47] = { 48, 49, 50, 51, 52,
 
 				53, 54, 55, 56, 57, 65,
@@ -31,9 +65,7 @@ const char labels[47] = { 48, 49, 50, 51, 52,
 				
 				103, 104, 110, 113, 114, 116 };
 
-
-
-
+*/
 
 
 NET	*net;
@@ -52,6 +84,15 @@ size_t net_answer() {
 	return ans;
 }
 
+
+char process(float data[784]) {
+    print2D(data);
+    init_inputs(net, data);
+
+    feed_cycle(net);
+    
+    return labels[net_answer()];
+}
 
 void simulate(float *inputs, float *target, bool train) {
 	init_inputs(net, inputs);
@@ -122,11 +163,24 @@ int load_gui(char *path, bool trsp) {
 	if (!net)
 		return errno;
 
+    
+    unsigned int min = 1000, max = 0;
 
 	init_act(net);
+    for (unsigned int i = 0; i < train_cnt; i++) {
+        round2D(train_data[i].data);
+        if (i < test_cnt) {
+            round2D(test_data[i].data);
+        }
 
-		
-	for (unsigned int i = 0;trsp && i < train_cnt; i++) { 
+        if (train_data[i].label > max)
+            max = train_data[i].label;
+        if (train_data[i].label < min)
+            min = train_data[i].label;
+    }
+    printf("Max : %d, min : %d\n", max, min);
+	
+    for (unsigned int i = 0;trsp && i < train_cnt; i++) { 
 		transpose(train_data[i].data);
 		if (i < test_cnt)
 			transpose(test_data[i].data);
