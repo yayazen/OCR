@@ -160,6 +160,7 @@ void copy_GdkPixbuf(GdkPixbuf* src, GdkPixbuf* dst, size_t height, size_t width)
         size_t dst_height = gdk_pixbuf_get_height(dst);
         size_t dst_width = gdk_pixbuf_get_width(dst);
         size_t dst_rowstride = gdk_pixbuf_get_rowstride(dst);
+	size_t dst_n_channels = gdk_pixbuf_get_n_channels(dst);
         guchar* dst_pixels = gdk_pixbuf_get_pixels(dst);
 
 
@@ -168,11 +169,29 @@ void copy_GdkPixbuf(GdkPixbuf* src, GdkPixbuf* dst, size_t height, size_t width)
                 fprintf(stderr, "copy_GdkPixbuf: invalid dimensions\n");
                 return;
         }
+	
+	if (src_n_channels == 4){
+		// src has cannal alpha, must treat differently
+
+		for (size_t h = height; h < height + dst_height; h++){
+			for (size_t w = width; w < width + dst_width; w++){
+				guchar* dst_pix = &dst_pixels[(h - height) * dst_rowstride + (w - width) * dst_n_channels];
+				guchar* src_pix = &src_pixels[h * src_rowstride + w * src_n_channels];
+				dst_pix[0] = src_pix[0];
+				dst_pix[1] = src_pix[1];
+				dst_pix[2] = src_pix[2];
+			}
+		}
+
+
+
+		return;
+	}
 
         for (size_t h = height; h < height + dst_height; h++){
                 memcpy(&dst_pixels[(h - height) * dst_rowstride],
                         &src_pixels[h * src_rowstride + width * src_n_channels],
-                        src_n_channels * dst_width);
+                        dst_n_channels * dst_width);
         }
 }
 
