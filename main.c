@@ -19,8 +19,8 @@ void on_MainWindow_destroy(void) {
 
 
 bool IMG_loaded = false;
-char *file;
 size_t len = 0;
+char    *str = NULL;
 
 void set_goal() {
     NN.goal = gtk_spin_button_get_value (GTK_SPIN_BUTTON (Spin));
@@ -72,6 +72,25 @@ void on_Save_clicked (void) {
         print_gui(NN.buffer,"[Failed] - There is yet no network loaded ...");
 }
 
+void on_TextSave_clicked (void) {
+    if (!str) {
+        print_gui(img_buffer, "[Failed] No text to save yet !\n");
+        return;
+    }
+
+    const gchar *file = gtk_entry_get_text (GTK_ENTRY (Textsave));
+    
+    FILE *fp = fopen(file, "w");
+    
+    fprintf(fp, "Result from OCR - [%s]\n\n%s", time_handler(), str);
+    fclose(fp); 
+    
+    print_gui(img_buffer, "[Success] Work saved under \"%s\" !\n", file);
+
+    free(str);
+    str = NULL;
+}
+
 
 void on_Clear_clicked (void) {
     gtk_text_buffer_set_text(NN.buffer, "", -1);
@@ -88,8 +107,9 @@ void on_Load_clicked (void) {
     if (NN.event != 0)
         print_gui(NN.buffer, "[Failed] Wait for unfinished jobs to terminate !");
     else { 
-        if (load_gui(gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (NN.Select)), false) == 0)
+        if (load_gui(gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (NN.Select)), false) == 0) {
             NN.loaded = TRUE;
+        }
     }
 }
 
@@ -137,7 +157,7 @@ void on_Test_clicked (void) {
 /* IMG */
 
 void on_IMGSelect_selection_changed (void) {
-    file = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (IMGSelect));  
+    char *file = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (IMGSelect));  
     
     Pixbuf = gdk_pixbuf_new_from_file (file, NULL);
     gtk_image_set_from_pixbuf(GTK_IMAGE (IMGShow), 
@@ -149,6 +169,7 @@ void on_IMGSelect_selection_changed (void) {
     }
 
     IMG_loaded = true;
+    set = NULL;
 
     gtk_list_store_clear (store);    
     gtk_widget_show (ToolProc);
@@ -212,14 +233,21 @@ void on_TogSeg_toggled(void) {
 
 
 void on_TogStart_toggled(void) {
+    free(str);
+    if (!NN.loaded || !set) {
+        print_gui(img_buffer, " [Failed] Can't start recognition yet ! \n");
+        return;
+    }
+
     float data[784];
     char c;
     charSetObj *el;
     
-    char *str = calloc(len * 100, sizeof(char));
+    str = calloc(len * 1024, sizeof(char));
 
     size_t i = 0;
     for (size_t l = 0; l < len; l++) {
+        str[i++] = '\t';
         el = set[l]->head;
         while (el != NULL) {
             if (el->img != NULL) {
@@ -227,7 +255,6 @@ void on_TogStart_toggled(void) {
                 c = process(data);
                 printf("Ans -> %c\n", c);
                 str[i++] = c;
-                //getchar();
             }
             else {
                 str[i++] = ' ';
@@ -236,8 +263,7 @@ void on_TogStart_toggled(void) {
         }
         str[i++] = '\n'; 
     }
-    print_gui(img_buffer, "[Started at %s] Recognition results :\n %s", time_handler(), str);
-    free(str);
+    print_gui(img_buffer, "[Started at %s] Recognition results :\n\n%s\n\n", time_handler(), str);
 }
 
 
@@ -266,7 +292,7 @@ int main(int argc, char *argv [])
           return code;
         }
 
-    
+    set = NULL;
     /* Link signals to interface */
     gtk_builder_connect_signals (data.builder, &data);
 
@@ -295,6 +321,9 @@ int main(int argc, char *argv [])
     img_view = GTK_WIDGET(gtk_builder_get_object (data.builder, "textview0"));   
     img_buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (img_view));
 
+    
+    Textsave = GTK_WIDGET(gtk_builder_get_object (data.builder, "REntry")),
+    
     ToolProc = GTK_WIDGET(gtk_builder_get_object (data.builder, "Tools"));
 
     IconView = GTK_ICON_VIEW(gtk_builder_get_object (data.builder, "IconView"));

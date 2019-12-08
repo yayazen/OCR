@@ -76,7 +76,7 @@ GdkPixbuf** split_touching_characters(GdkPixbuf* img, size_t* n, uint8_t thresho
 // splits the touching characters in an image using drop_fall. 
 
 void finding_character(GdkPixbuf* img, size_t h, size_t w, 
-	size_t *minHeight, size_t *maxHeight, size_t *minWidth, size_t *maxWidth, int* foundBot, uint8_t threshold);
+	size_t *minHeight, size_t *maxHeight, size_t *minWidth, size_t *maxWidth, uint8_t threshold);
 // helps identifying the boundaries of a character in an imaged passed through drop_fall
 
 GdkPixbuf* copying_characters(GdkPixbuf* src, size_t minHeight, size_t maxHeight, 

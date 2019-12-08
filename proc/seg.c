@@ -160,6 +160,7 @@ void copy_GdkPixbuf(GdkPixbuf* src, GdkPixbuf* dst, size_t height, size_t width)
         size_t dst_height = gdk_pixbuf_get_height(dst);
         size_t dst_width = gdk_pixbuf_get_width(dst);
         size_t dst_rowstride = gdk_pixbuf_get_rowstride(dst);
+	size_t dst_n_channels = gdk_pixbuf_get_n_channels(dst);
         guchar* dst_pixels = gdk_pixbuf_get_pixels(dst);
 
 
@@ -168,11 +169,29 @@ void copy_GdkPixbuf(GdkPixbuf* src, GdkPixbuf* dst, size_t height, size_t width)
                 fprintf(stderr, "copy_GdkPixbuf: invalid dimensions\n");
                 return;
         }
+	
+	if (src_n_channels == 4){
+		// src has cannal alpha, must treat differently
+
+		for (size_t h = height; h < height + dst_height; h++){
+			for (size_t w = width; w < width + dst_width; w++){
+				guchar* dst_pix = &dst_pixels[(h - height) * dst_rowstride + (w - width) * dst_n_channels];
+				guchar* src_pix = &src_pixels[h * src_rowstride + w * src_n_channels];
+				dst_pix[0] = src_pix[0];
+				dst_pix[1] = src_pix[1];
+				dst_pix[2] = src_pix[2];
+			}
+		}
+
+
+
+		return;
+	}
 
         for (size_t h = height; h < height + dst_height; h++){
                 memcpy(&dst_pixels[(h - height) * dst_rowstride],
                         &src_pixels[h * src_rowstride + width * src_n_channels],
-                        src_n_channels * dst_width);
+                        dst_n_channels * dst_width);
         }
 }
 
@@ -284,6 +303,7 @@ charSet* create_charSet_from_line(GdkPixbuf* img, size_t setHeight, size_t setWi
 
 				}
 				free(splitChars);
+				stripWidth = 0;
 			}
 		}
 		stripWidth++;
@@ -416,9 +436,8 @@ GdkPixbuf** split_touching_characters(GdkPixbuf* img, size_t *n, uint8_t thresho
                 } else {
                         if (betweenChars){
                                 betweenChars = 0;
-				int foundBot = 0;
 				size_t minHeight = pixbufHeight - 1, maxHeight = pixbufHeight - 1, minWidth = w, maxWidth = w;
-				finding_character(img, pixbufHeight - 1, w, &minHeight, &maxHeight, &minWidth, &maxWidth, &foundBot, threshold);
+				finding_character(img, pixbufHeight - 1, w, &minHeight, &maxHeight, &minWidth, &maxWidth, threshold);
 				chars[i] = copying_characters(img, minHeight, maxHeight, minWidth, maxWidth, threshold);
 				i++;
                         }
@@ -427,45 +446,84 @@ GdkPixbuf** split_touching_characters(GdkPixbuf* img, size_t *n, uint8_t thresho
 	return chars;
 }
 
+struct simpleStack{
+	struct simpleStack* next;
+	size_t h, w;
+};
+
 //recursive function; could be otpimized by using a stack
-void finding_character(GdkPixbuf* img, size_t h, size_t w, 
-	size_t *minHeight, size_t *maxHeight, size_t *minWidth, size_t *maxWidth, int *foundBot, uint8_t threshold){
+void finding_character(GdkPixbuf* img, size_t h, size_t w, size_t *minHeight, size_t *maxHeight, size_t *minWidth, size_t *maxWidth, uint8_t threshold){
 	
+	int foundBot = 0;
+	struct simpleStack* stack = malloc(sizeof(struct simpleStack));
+	stack->h = h;
+	stack->w = w;
+	stack->next = NULL;
 	guchar* pixels = gdk_pixbuf_get_pixels(img);
         size_t rowstride = gdk_pixbuf_get_rowstride(img);
         size_t n_channels = gdk_pixbuf_get_n_channels(img);
         size_t pixbufHeight = gdk_pixbuf_get_height(img);
         size_t pixbufWidth = gdk_pixbuf_get_width(img);
+	
 
-	if (h >= pixbufHeight || w >= pixbufWidth)
-		return;
-	uint8_t *pix = &pixels[h * rowstride + w * n_channels];
-	if (pix[0] == 127 || pix[0] == 128)
-		return;
-	pix[0] = 128;
-	if (!(*foundBot)){
-		if (pix[1] <= threshold){
-			*foundBot = 1;
+	while (stack != NULL){
+		h = stack->h;
+		w = stack->w;
+		struct simpleStack* tmp = stack;
+		stack = stack->next;
+		free(tmp);
+
+		if (h >= pixbufHeight || w >= pixbufWidth)
+			continue;
+
+		uint8_t *pix = &pixels[h * rowstride + w * n_channels];
+
+		if (pix[0] == 127 || pix[0] == 128)
+			continue;
+
+		pix[0] = 128;
+		if (!foundBot && pix[1] <= threshold){
+			foundBot = 1;
 			*maxHeight = h;
 		}
-	}
 
 
-	if (h > *maxHeight && pix[1] <= threshold){
-		*maxHeight = h;
-	} else if (h < *minHeight){
-		*minHeight = h;
+		if (h > *maxHeight && pix[1] <= threshold){
+			*maxHeight = h;
+		} else if (h < *minHeight){
+			*minHeight = h;
+		}
+		if (w > *maxWidth){
+			*maxWidth = w;
+		} else if (w < *minWidth){
+			*minWidth = w;
+		}
+		
+		tmp = malloc(sizeof(struct simpleStack));
+		tmp->next = stack;
+		tmp->h = h+1;
+		tmp->w = w;
+		stack = tmp;
+
+		tmp = malloc(sizeof(struct simpleStack));
+                tmp->next = stack;
+                tmp->h = h-1;
+                tmp->w = w;
+                stack = tmp;
+
+		tmp = malloc(sizeof(struct simpleStack));
+                tmp->next = stack;
+                tmp->h = h;
+                tmp->w = w+1;
+                stack = tmp;
+
+		tmp = malloc(sizeof(struct simpleStack));
+                tmp->next = stack;
+                tmp->h = h;
+                tmp->w = w-1;
+                stack = tmp;
+		
 	}
-	if (w > *maxWidth){
-		*maxWidth = w;
-	} else if (w < *minWidth){
-		*minWidth = w;
-	}
-	
-	finding_character(img, h+1, w, minHeight, maxHeight, minWidth, maxWidth, foundBot, threshold);
-	finding_character(img, h-1, w, minHeight, maxHeight, minWidth, maxWidth, foundBot, threshold);
-	finding_character(img, h, w+1, minHeight, maxHeight, minWidth, maxWidth, foundBot, threshold);
-	finding_character(img, h, w-1, minHeight, maxHeight, minWidth, maxWidth, foundBot, threshold);
 	return;
 }
 
@@ -526,7 +584,7 @@ void convert_pix_len_chars(charSet* set){
 	
 	double avrg;
 	if (n > 0){
-		avrg = pixLen / n;
+		avrg = ((double)pixLen / (double)n) * 1.25;
 	} else {
 		avrg = 5;
 	}

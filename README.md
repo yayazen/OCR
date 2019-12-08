@@ -1,15 +1,21 @@
 # OCR S3 Epita
 
-## EMNIST collection (Eval and Gui)
+## Final version
 
 ### Requirements
 	gtk+-3.0
 	gmodule-2.0
-	Download and choose one of Emnist dataset, preferably balanced or digit
+	
+    You must extract sets from train.tar.gz in order to train the network.
+    Testing images can be found in data/
 
-### Run
+### Tools
+    file : tools/uconv
+    Convert image sets into a lighter binary file, 0s and 1s mainly.
+
+### Run (GUI only)
 	(build) make main
-	./main (2>/dev/null) - no args
+	or  ./start
 
 ### Useful files
-	~/save.nd - Network Data
+	~/save.nd - Testing network data

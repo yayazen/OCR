@@ -25,6 +25,7 @@ typedef struct {
 /* net */
 Itf NN;
 GtkWidget       *NNsave;
+GtkWidget       *Textsave;
 
 GtkWidget       *window;
 
