@@ -177,7 +177,7 @@ void copy_GdkPixbuf(GdkPixbuf* src, GdkPixbuf* dst, size_t height, size_t width)
 }
 
 
-charSet* create_charSet_from_line(GdkPixbuf* img, size_t setHeight, size_t setWidth, uint8_t threshold){
+charSet* create_charSet_from_line(GdkPixbuf* img, size_t setHeight, size_t setWidth, uint8_t threshold, size_t border){
 	if (img == NULL){
 		fprintf(stderr, "create_charSet_from_line: img is NULL, could not create charSet\n");
 		return NULL;
@@ -264,7 +264,7 @@ charSet* create_charSet_from_line(GdkPixbuf* img, size_t setHeight, size_t setWi
 					}
 
 
-					GdkPixbuf* cleanedCharImg = fit_image(splitChars[i], set->h, set->w);
+					GdkPixbuf* cleanedCharImg = fit_image(splitChars[i], set->h, set->w, border);
                                 	g_object_unref(splitChars[i]);
                                 	if (cleanedCharImg == NULL){
                                 	        fprintf(stderr, "create_charSet_from_line: could not resize img\n");
@@ -416,8 +416,9 @@ GdkPixbuf** split_touching_characters(GdkPixbuf* img, size_t *n, uint8_t thresho
                 } else {
                         if (betweenChars){
                                 betweenChars = 0;
+				int foundBot = 0;
 				size_t minHeight = pixbufHeight - 1, maxHeight = pixbufHeight - 1, minWidth = w, maxWidth = w;
-				finding_character(img, pixbufHeight - 1, w, &minHeight, &maxHeight, &minWidth, &maxWidth);
+				finding_character(img, pixbufHeight - 1, w, &minHeight, &maxHeight, &minWidth, &maxWidth, &foundBot, threshold);
 				chars[i] = copying_characters(img, minHeight, maxHeight, minWidth, maxWidth, threshold);
 				i++;
                         }
@@ -428,7 +429,7 @@ GdkPixbuf** split_touching_characters(GdkPixbuf* img, size_t *n, uint8_t thresho
 
 //recursive function; could be otpimized by using a stack
 void finding_character(GdkPixbuf* img, size_t h, size_t w, 
-	size_t *minHeight, size_t *maxHeight, size_t *minWidth, size_t *maxWidth){
+	size_t *minHeight, size_t *maxHeight, size_t *minWidth, size_t *maxWidth, int *foundBot, uint8_t threshold){
 	
 	guchar* pixels = gdk_pixbuf_get_pixels(img);
         size_t rowstride = gdk_pixbuf_get_rowstride(img);
@@ -442,7 +443,15 @@ void finding_character(GdkPixbuf* img, size_t h, size_t w,
 	if (pix[0] == 127 || pix[0] == 128)
 		return;
 	pix[0] = 128;
-	if (h > *maxHeight){
+	if (!(*foundBot)){
+		if (pix[1] <= threshold){
+			*foundBot = 1;
+			*maxHeight = h;
+		}
+	}
+
+
+	if (h > *maxHeight && pix[1] <= threshold){
 		*maxHeight = h;
 	} else if (h < *minHeight){
 		*minHeight = h;
@@ -453,10 +462,10 @@ void finding_character(GdkPixbuf* img, size_t h, size_t w,
 		*minWidth = w;
 	}
 	
-	finding_character(img, h+1, w, minHeight, maxHeight, minWidth, maxWidth);
-	finding_character(img, h-1, w, minHeight, maxHeight, minWidth, maxWidth);
-	finding_character(img, h, w+1, minHeight, maxHeight, minWidth, maxWidth);
-	finding_character(img, h, w-1, minHeight, maxHeight, minWidth, maxWidth);
+	finding_character(img, h+1, w, minHeight, maxHeight, minWidth, maxWidth, foundBot, threshold);
+	finding_character(img, h-1, w, minHeight, maxHeight, minWidth, maxWidth, foundBot, threshold);
+	finding_character(img, h, w+1, minHeight, maxHeight, minWidth, maxWidth, foundBot, threshold);
+	finding_character(img, h, w-1, minHeight, maxHeight, minWidth, maxWidth, foundBot, threshold);
 	return;
 }
 
@@ -562,14 +571,14 @@ void convert_pix_len_chars(charSet* set){
 }
 
 
-charSet** segmentation(GdkPixbuf* img, size_t h, size_t w, uint8_t threshold, size_t *nLines){
+charSet** segmentation(GdkPixbuf* img, size_t h, size_t w, uint8_t threshold, size_t *nLines, size_t border){
 	*nLines = 0;
 	GdkPixbuf** lines = split_img_into_lines(img, nLines, threshold);
 	charSet** sets = calloc(*nLines, sizeof(charSet*));
 	
 	
 	for (size_t i = 0; i < *nLines; i++){
-		sets[i] = create_charSet_from_line(lines[i], h, w, threshold);
+		sets[i] = create_charSet_from_line(lines[i], h, w, threshold, border);
 		g_object_unref(lines[i]);
 		convert_pix_len_chars(sets[i]);
 	}

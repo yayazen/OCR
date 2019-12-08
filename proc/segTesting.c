@@ -25,14 +25,14 @@ int main(int argc, char** argv){
 	// manual entry of threshold rather than calculating the average value makes for cleaner images,
 	// although we need some sort of cleaner way for doing this as the user probably won't want to have to fiddle with
 	// 100 different settings
-	uint8_t threshold = 100;
+	uint8_t threshold = 127;
 
 	grayscale(img);
 	binarization(img, threshold);
 
 
 	size_t n = 0;
-	charSet** chars = segmentation(img, 64, 64, threshold, &n);
+	charSet** chars = segmentation(img, 28, 28, threshold, &n, 4);
 
 
 	//File saving... strongly inefficient

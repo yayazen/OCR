@@ -240,7 +240,7 @@ GdkPixbuf* filling(GdkPixbuf* img, size_t height, size_t width){
 	return newImg;
 }
 
-GdkPixbuf* fit_image(GdkPixbuf* img, size_t height, size_t width){
+GdkPixbuf* fit_image(GdkPixbuf* img, size_t height, size_t width, size_t border){
         if (img == NULL){
                 fprintf(stderr, "fit_image: img is NULL\n");
                 return NULL;
@@ -251,7 +251,7 @@ GdkPixbuf* fit_image(GdkPixbuf* img, size_t height, size_t width){
                 return NULL;
         }
         
-	GdkPixbuf* scaledImg = proximal_interpolation(img, height, width);
+	GdkPixbuf* scaledImg = proximal_interpolation(img, height - border, width - border);
 	GdkPixbuf* fittedImg = filling(scaledImg, height, width);
 	if (scaledImg != fittedImg){
 		g_object_unref(scaledImg);

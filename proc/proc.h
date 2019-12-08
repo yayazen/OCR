@@ -25,7 +25,7 @@ GdkPixbuf* filling(GdkPixbuf* img, size_t height, size_t width);
 // will return NULL if an error is encountered
 // will return the pointer to the input image if size is identical
 
-GdkPixbuf* fit_image(GdkPixbuf* img, size_t height, size_t weight);
+GdkPixbuf* fit_image(GdkPixbuf* img, size_t height, size_t weight, size_t border);
 // fit_image makes an image fit into a h*w size image
 // by compressing / decompressing and then adding pixels to fir the format
 // will return NULL if an error is encountered
