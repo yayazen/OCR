@@ -18,4 +18,4 @@
 	or  ./start
 
 ### Useful files
-	~/save.nd - Testing network data
+	~/data/save.nd - Testing network data
