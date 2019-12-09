@@ -6,6 +6,7 @@
 #include "train.h"
 #include "proc.h"
 #include "seg.h"
+#include "noise.h"
 
 #define H   400
 #define W   600
@@ -157,6 +158,7 @@ void on_Test_clicked (void) {
 /* IMG */
 
 void on_IMGSelect_selection_changed (void) {
+    IMG_loaded = false;
     char *file = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (IMGSelect));  
     
     Pixbuf = gdk_pixbuf_new_from_file (file, NULL);
@@ -179,6 +181,14 @@ void on_IMGSelect_selection_changed (void) {
     
 
 /* Proc Toggle */
+void on_DsTog_toggled(void) {
+    if (IMG_loaded) {
+        denoise(Pixbuf);
+        gtk_image_set_from_pixbuf(GTK_IMAGE (IMGShow), 
+            gdk_pixbuf_scale_simple(Pixbuf, W, H, GDK_INTERP_NEAREST));
+    }
+}
+
 
 void on_TogGray_toggled(void) {
     if (IMG_loaded) {
