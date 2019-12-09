@@ -1,4 +1,4 @@
-#include "testdenoise.h"
+//include "testdenoise.h"
 #include <gtk/gtk.h>
 void swap(int *a, int *b)
 {
@@ -16,14 +16,14 @@ void bubbleSort(int arr[], int n)
            if (arr[j] > arr[j+1])
               swap(&arr[j], &arr[j+1]);}}
 }
-void image_denoise(GdkPixbuf *image)
+void image_denoise(GdkPixbuf *image, GdkPixbuf *otherImg)
 {
     guchar* pixels = gdk_pixbuf_get_pixels(image);
     int width = gdk_pixbuf_get_width(image);
     int height = gdk_pixbuf_get_height(image);
     int rowstride = gdk_pixbuf_get_rowstride(image);
     int n_channels = gdk_pixbuf_get_n_channels(image);
-
+    guchar* other_pixels = gdk_pixbuf_get_pixels(otherImg);
     int mediane;
     for (size_t w = 1; w < width - 1; w++)
     {
@@ -41,7 +41,10 @@ void image_denoise(GdkPixbuf *image)
 
             bubbleSort(pixelarray,7);
             mediane = pixelarray[3];
-            pixels[h * rowstride + w * n_channels] = mediane;
+            other_pixels[h * rowstride + w * n_channels] = mediane;
+            other_pixels[h * rowstride + w * n_channels + 1] = mediane;
+            other_pixels[h * rowstride + w * n_channels + 2] = mediane;
+
 
         }
     }
@@ -51,8 +54,11 @@ int main(int argc, char **argv) {
         return -1;
 
     GdkPixbuf *pixel = gdk_pixbuf_new_from_file (argv[1], NULL);
-    image_denoise(pixel);
+    int width = gdk_pixbuf_get_width(pixel);
+    int height = gdk_pixbuf_get_height(pixel);
+    GdkPixbuf *newImg = gdk_pixbuf_new(GDK_COLORSPACE_RGB, FALSE, 8, width, height);
+    image_denoise(pixel, newImg);
 
-    gdk_pixbuf_save(pixel, "out.jpg", "jpeg", NULL, NULL);
+    gdk_pixbuf_save(newImg, "out.jpg", "jpeg", NULL, NULL);
     return 0;
 }
